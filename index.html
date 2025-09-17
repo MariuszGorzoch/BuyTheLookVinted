@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vinted Wardrobe Items</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 2rem;
+        background-color: #fafafa;
+        color: #202124;
+      }
+
+      h1 {
+        margin-bottom: 1rem;
+      }
+
+      p.description {
+        margin-bottom: 1.5rem;
+        color: #5f6368;
+      }
+
+      ul {
+        list-style: disc;
+        padding-left: 1.5rem;
+      }
+
+      li {
+        margin-bottom: 1rem;
+      }
+
+      li img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 0.75rem;
+        vertical-align: middle;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      li a {
+        font-weight: 600;
+        color: #1a73e8;
+        text-decoration: none;
+        vertical-align: middle;
+      }
+
+      li a:hover {
+        text-decoration: underline;
+      }
+
+      #status-message {
+        color: #5f6368;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Wardrobe items</h1>
+    <p class="description">
+      Live list of items fetched from the Vinted wardrobe API.
+    </p>
+    <p id="status-message">Loading items…</p>
+    <ul id="items-list"></ul>
+
+    <script>
+      const API_URL = "https://www.vinted.pl/api/v2/wardrobe/146342127/items";
+      const listElement = document.getElementById("items-list");
+      const statusElement = document.getElementById("status-message");
+
+      function resolveImageUrl(item) {
+        if (!item) {
+          return undefined;
+        }
+
+        const photo = item.photo || (Array.isArray(item.photos) ? item.photos[0] : undefined);
+        if (!photo) {
+          return undefined;
+        }
+
+        const thumbnails = photo.thumbnails || {};
+        return (
+          thumbnails?.small?.url ||
+          thumbnails?.medium?.url ||
+          thumbnails?.large?.url ||
+          photo.url
+        );
+      }
+
+      async function loadItems() {
+        try {
+          const response = await fetch(API_URL, {
+            headers: {
+              accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const items = Array.isArray(payload.items) ? payload.items : [];
+
+          if (items.length === 0) {
+            statusElement.textContent = "No items found.";
+            return;
+          }
+
+          statusElement.textContent = "";
+          statusElement.style.display = "none";
+
+          items.forEach((item) => {
+            const listItem = document.createElement("li");
+
+            const imageUrl = resolveImageUrl(item);
+            if (imageUrl) {
+              const image = document.createElement("img");
+              image.src = imageUrl;
+              image.alt = item.title || "Wardrobe item photo";
+              listItem.appendChild(image);
+            }
+
+            const link = document.createElement("a");
+            link.href = item.url || `https://www.vinted.pl/items/${item.id}`;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = item.title || `Item #${item.id}`;
+            listItem.appendChild(link);
+
+            listElement.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error("Unable to load items", error);
+          statusElement.textContent = "Unable to load items. Please try again later.";
+        }
+      }
+
+      loadItems();
+    </script>
+  </body>
+</html>
