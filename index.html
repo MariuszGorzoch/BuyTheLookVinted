@@ -61,11 +61,12 @@
     <p class="description">
       Live list of items fetched from the Vinted wardrobe API.
     </p>
-    <p id="status-message">Loading items…</p>
+    <p id="status-message">Preparing secure session…</p>
     <ul id="items-list"></ul>
 
     <script>
       const API_URL = "https://www.vinted.pl/api/v2/wardrobe/146342127/items";
+      const MEMBER_URL = "https://www.vinted.pl/member/146342127";
       const listElement = document.getElementById("items-list");
       const statusElement = document.getElementById("status-message");
 
@@ -88,19 +89,65 @@
         );
       }
 
-      async function loadItems() {
+      async function primeSession() {
         try {
-          const response = await fetch(API_URL, {
-            headers: {
-              accept: "application/json",
-            },
+          const response = await fetch(MEMBER_URL, {
+            credentials: "include",
+            mode: "cors",
           });
 
           if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
+            throw new Error(`Session request failed with status ${response.status}`);
           }
 
-          const payload = await response.json();
+          const cookieFromHeader = response.headers?.get?.("set-cookie");
+          if (cookieFromHeader) {
+            return cookieFromHeader;
+          }
+
+          if (typeof document !== "undefined" && document.cookie) {
+            return document.cookie;
+          }
+        } catch (error) {
+          console.warn("Unable to prime authenticated session", error);
+        }
+
+        return "";
+      }
+
+      async function fetchWardrobeItems(sessionCookie) {
+        const headers = new Headers({
+          accept: "application/json",
+        });
+
+        if (sessionCookie) {
+          try {
+            headers.set("Cookie", sessionCookie);
+          } catch (error) {
+            console.warn("Unable to forward session cookie header directly", error);
+          }
+        }
+
+        const response = await fetch(API_URL, {
+          headers,
+          credentials: "include",
+          mode: "cors",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        return response.json();
+      }
+
+      async function loadItems() {
+        try {
+          const sessionCookie = await primeSession();
+
+          statusElement.textContent = "Loading items…";
+
+          const payload = await fetchWardrobeItems(sessionCookie);
           const items = Array.isArray(payload.items) ? payload.items : [];
 
           if (items.length === 0) {
