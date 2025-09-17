@@ -70,6 +70,67 @@
       const listElement = document.getElementById("items-list");
       const statusElement = document.getElementById("status-message");
 
+      const CORS_PROXY_BASE = "https://cors.isomorphic-git.org/";
+      let usingCorsProxy = false;
+
+      function buildRequestUrl(url) {
+        return usingCorsProxy ? `${CORS_PROXY_BASE}${url}` : url;
+      }
+
+      function normalizeRequestOptions(options = {}) {
+        const normalized = { ...options };
+
+        if (usingCorsProxy) {
+          normalized.mode = "cors";
+          normalized.credentials = "omit";
+        } else {
+          if (!normalized.mode) {
+            normalized.mode = "cors";
+          }
+
+          if (!normalized.credentials) {
+            normalized.credentials = "include";
+          }
+        }
+
+        return normalized;
+      }
+
+      async function fetchWithCorsSupport(url, options = {}, { allowProxyRetry = true } = {}) {
+        const requestUrl = buildRequestUrl(url);
+        const finalOptions = normalizeRequestOptions(options);
+
+        try {
+          const response = await fetch(requestUrl, finalOptions);
+
+          if (!response.ok && allowProxyRetry && !usingCorsProxy) {
+            if (response.status === 401 || response.status === 403) {
+              console.warn(
+                `Received ${response.status} from ${url}. Retrying via proxy to bypass potential cross-origin/session enforcement.`,
+              );
+              usingCorsProxy = true;
+              statusElement.textContent =
+                "Encountered cross-origin restrictions. Retrying via public proxy…";
+              statusElement.style.display = "block";
+              return fetchWithCorsSupport(url, options, { allowProxyRetry: false });
+            }
+          }
+
+          return response;
+        } catch (error) {
+          if (allowProxyRetry && !usingCorsProxy) {
+            console.warn("Direct request failed (likely due to CORS). Retrying via proxy.", error);
+            usingCorsProxy = true;
+            statusElement.textContent =
+              "Encountered cross-origin restrictions. Retrying via public proxy…";
+            statusElement.style.display = "block";
+            return fetchWithCorsSupport(url, options, { allowProxyRetry: false });
+          }
+
+          throw error;
+        }
+      }
+
       function resolveImageUrl(item) {
         if (!item) {
           return undefined;
@@ -91,13 +152,21 @@
 
       async function primeSession() {
         try {
-          const response = await fetch(MEMBER_URL, {
-            credentials: "include",
-            mode: "cors",
-          });
+          const response = await fetchWithCorsSupport(
+            MEMBER_URL,
+            {
+              credentials: "include",
+              mode: "cors",
+            },
+            { allowProxyRetry: true },
+          );
 
           if (!response.ok) {
             throw new Error(`Session request failed with status ${response.status}`);
+          }
+
+          if (usingCorsProxy) {
+            return "";
           }
 
           const cookieFromHeader = response.headers?.get?.("set-cookie");
@@ -128,11 +197,14 @@
           }
         }
 
-        const response = await fetch(API_URL, {
-          headers,
-          credentials: "include",
-          mode: "cors",
-        });
+        const response = await fetchWithCorsSupport(
+          API_URL,
+          {
+            headers,
+            credentials: "include",
+            mode: "cors",
+          },
+        );
 
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
@@ -155,8 +227,14 @@
             return;
           }
 
-          statusElement.textContent = "";
-          statusElement.style.display = "none";
+          if (usingCorsProxy) {
+            statusElement.textContent =
+              "Fetched via public proxy because the API does not allow cross-origin requests.";
+            statusElement.style.display = "block";
+          } else {
+            statusElement.textContent = "";
+            statusElement.style.display = "none";
+          }
 
           items.forEach((item) => {
             const listItem = document.createElement("li");
@@ -181,6 +259,7 @@
         } catch (error) {
           console.error("Unable to load items", error);
           statusElement.textContent = "Unable to load items. Please try again later.";
+          statusElement.style.display = "block";
         }
       }
 
