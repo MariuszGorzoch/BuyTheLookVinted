@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vinted Wardrobe Items</title>
+    <title>Store Products</title>
     <style>
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -57,213 +57,129 @@
     </style>
   </head>
   <body>
-    <h1>Wardrobe items</h1>
+    <h1>Store products</h1>
     <p class="description">
-      Live list of items fetched from the Vinted wardrobe API.
+      Products retrieved from the MonittaStore API endpoint.
     </p>
-    <p id="status-message">Preparing secure session…</p>
+    <p id="status-message">Loading products…</p>
     <ul id="items-list"></ul>
 
     <script>
-      const API_URL = "https://www.vinted.pl/api/v2/wardrobe/146342127/items";
-      const MEMBER_URL = "https://www.vinted.pl/member/146342127";
+      const API_URL = "https://localhost:7193/MonittaStore";
       const listElement = document.getElementById("items-list");
       const statusElement = document.getElementById("status-message");
 
-      const CORS_PROXY_BASE = "https://cors.isomorphic-git.org/";
-      let usingCorsProxy = false;
+      function normaliseProducts(payload) {
+        if (!payload) {
+          return [];
+        }
 
-      function buildRequestUrl(url) {
-        return usingCorsProxy ? `${CORS_PROXY_BASE}${url}` : url;
+        if (Array.isArray(payload)) {
+          return payload;
+        }
+
+        const possibleCollections = ["items", "products", "data", "results"];
+        for (const key of possibleCollections) {
+          if (Array.isArray(payload[key])) {
+            return payload[key];
+          }
+        }
+
+        return [];
       }
 
-      function normalizeRequestOptions(options = {}) {
-        const normalized = { ...options };
-
-        if (usingCorsProxy) {
-          normalized.mode = "cors";
-          normalized.credentials = "omit";
-        } else {
-          if (!normalized.mode) {
-            normalized.mode = "cors";
-          }
-
-          if (!normalized.credentials) {
-            normalized.credentials = "include";
-          }
-        }
-
-        return normalized;
-      }
-
-      async function fetchWithCorsSupport(url, options = {}, { allowProxyRetry = true } = {}) {
-        const requestUrl = buildRequestUrl(url);
-        const finalOptions = normalizeRequestOptions(options);
-
-        try {
-          const response = await fetch(requestUrl, finalOptions);
-
-          if (!response.ok && allowProxyRetry && !usingCorsProxy) {
-            if (response.status === 401 || response.status === 403) {
-              console.warn(
-                `Received ${response.status} from ${url}. Retrying via proxy to bypass potential cross-origin/session enforcement.`,
-              );
-              usingCorsProxy = true;
-              statusElement.textContent =
-                "Encountered cross-origin restrictions. Retrying via public proxy…";
-              statusElement.style.display = "block";
-              return fetchWithCorsSupport(url, options, { allowProxyRetry: false });
-            }
-          }
-
-          return response;
-        } catch (error) {
-          if (allowProxyRetry && !usingCorsProxy) {
-            console.warn("Direct request failed (likely due to CORS). Retrying via proxy.", error);
-            usingCorsProxy = true;
-            statusElement.textContent =
-              "Encountered cross-origin restrictions. Retrying via public proxy…";
-            statusElement.style.display = "block";
-            return fetchWithCorsSupport(url, options, { allowProxyRetry: false });
-          }
-
-          throw error;
-        }
-      }
-
-      function resolveImageUrl(item) {
-        if (!item) {
-          return undefined;
-        }
-
-        const photo = item.photo || (Array.isArray(item.photos) ? item.photos[0] : undefined);
-        if (!photo) {
-          return undefined;
-        }
-
-        const thumbnails = photo.thumbnails || {};
+      function resolveImageUrl(product) {
         return (
-          thumbnails?.small?.url ||
-          thumbnails?.medium?.url ||
-          thumbnails?.large?.url ||
-          photo.url
+          product?.imageUrl ||
+          product?.image ||
+          product?.thumbnail ||
+          product?.photo?.url ||
+          product?.photos?.[0]?.url ||
+          undefined
         );
       }
 
-      async function primeSession() {
+      function resolveLink(product) {
+        return (
+          product?.url ||
+          product?.link ||
+          product?.href ||
+          product?.permalink ||
+          ""
+        );
+      }
+
+      function resolveTitle(product, index) {
+        return (
+          product?.title ||
+          product?.name ||
+          product?.description ||
+          product?.id?.toString?.() ||
+          `Product #${index + 1}`
+        );
+      }
+
+      async function loadProducts() {
         try {
-          const response = await fetchWithCorsSupport(
-            MEMBER_URL,
-            {
-              credentials: "include",
-              mode: "cors",
+          const response = await fetch(API_URL, {
+            headers: {
+              accept: "application/json",
             },
-            { allowProxyRetry: true },
-          );
+          });
 
           if (!response.ok) {
-            throw new Error(`Session request failed with status ${response.status}`);
+            throw new Error(`Request failed with status ${response.status}`);
           }
 
-          if (usingCorsProxy) {
-            return "";
-          }
+          const payload = await response.json();
+          const products = normaliseProducts(payload);
 
-          const cookieFromHeader = response.headers?.get?.("set-cookie");
-          if (cookieFromHeader) {
-            return cookieFromHeader;
-          }
-
-          if (typeof document !== "undefined" && document.cookie) {
-            return document.cookie;
-          }
-        } catch (error) {
-          console.warn("Unable to prime authenticated session", error);
-        }
-
-        return "";
-      }
-
-      async function fetchWardrobeItems(sessionCookie) {
-        const headers = new Headers({
-          accept: "application/json",
-        });
-
-        if (sessionCookie) {
-          try {
-            headers.set("Cookie", sessionCookie);
-          } catch (error) {
-            console.warn("Unable to forward session cookie header directly", error);
-          }
-        }
-
-        const response = await fetchWithCorsSupport(
-          API_URL,
-          {
-            headers,
-            credentials: "include",
-            mode: "cors",
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        return response.json();
-      }
-
-      async function loadItems() {
-        try {
-          const sessionCookie = await primeSession();
-
-          statusElement.textContent = "Loading items…";
-
-          const payload = await fetchWardrobeItems(sessionCookie);
-          const items = Array.isArray(payload.items) ? payload.items : [];
-
-          if (items.length === 0) {
-            statusElement.textContent = "No items found.";
+          if (!Array.isArray(products) || products.length === 0) {
+            statusElement.textContent = "No products found.";
+            statusElement.style.display = "block";
             return;
           }
 
-          if (usingCorsProxy) {
-            statusElement.textContent =
-              "Fetched via public proxy because the API does not allow cross-origin requests.";
-            statusElement.style.display = "block";
-          } else {
-            statusElement.textContent = "";
-            statusElement.style.display = "none";
-          }
+          statusElement.textContent = "";
+          statusElement.style.display = "none";
 
-          items.forEach((item) => {
+          products.forEach((product, index) => {
             const listItem = document.createElement("li");
 
-            const imageUrl = resolveImageUrl(item);
+            const imageUrl = resolveImageUrl(product);
             if (imageUrl) {
               const image = document.createElement("img");
               image.src = imageUrl;
-              image.alt = item.title || "Wardrobe item photo";
+              image.alt = resolveTitle(product, index);
               listItem.appendChild(image);
             }
 
-            const link = document.createElement("a");
-            link.href = item.url || `https://www.vinted.pl/items/${item.id}`;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.textContent = item.title || `Item #${item.id}`;
-            listItem.appendChild(link);
+            const linkUrl = resolveLink(product);
+            const title = resolveTitle(product, index);
+
+            if (linkUrl) {
+              const link = document.createElement("a");
+              link.href = linkUrl;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.textContent = title;
+              listItem.appendChild(link);
+            } else {
+              const text = document.createElement("span");
+              text.textContent = title;
+              listItem.appendChild(text);
+            }
 
             listElement.appendChild(listItem);
           });
         } catch (error) {
-          console.error("Unable to load items", error);
-          statusElement.textContent = "Unable to load items. Please try again later.";
+          console.error("Unable to load products", error);
+          statusElement.textContent = "Unable to load products. Please try again later.";
           statusElement.style.display = "block";
         }
       }
 
-      loadItems();
+      loadProducts();
     </script>
   </body>
 </html>
