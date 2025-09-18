@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monitta Store – Product details</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top left, #eef2ff, #f8fafc 45%, #f1f5f9);
+        color: #1f2933;
+      }
+
+      main {
+        width: min(960px, calc(100% - 2.75rem));
+        margin: 0 auto;
+        padding: clamp(2.5rem, 5vw, 4.5rem) 0 clamp(3rem, 6vw, 4.75rem);
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: clamp(2rem, 6vw, 3rem);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 5vw, 2.75rem);
+        color: #101827;
+      }
+
+      .intro {
+        margin: 0 auto;
+        max-width: 60ch;
+        color: #52606d;
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-bottom: 1.25rem;
+        color: #1a56db;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
+      }
+
+      .back-link:hover,
+      .back-link:focus {
+        color: #1e429f;
+        text-decoration: underline;
+        outline: none;
+      }
+
+      #status {
+        margin: 0 auto clamp(1.5rem, 4vw, 2.25rem);
+        max-width: 60ch;
+        text-align: center;
+        color: #3d4852;
+        font-weight: 500;
+      }
+
+      #product-card {
+        background: #ffffff;
+        border-radius: 22px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+      }
+
+      .product-card__layout {
+        display: grid;
+        gap: clamp(1.75rem, 4vw, 2.75rem);
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        align-items: start;
+      }
+
+      .product-media {
+        position: relative;
+        border-radius: 18px;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(14, 165, 233, 0.12));
+        min-height: 320px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+      }
+
+      .product-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-media__placeholder {
+        font-weight: 600;
+        color: rgba(30, 64, 175, 0.75);
+        text-align: center;
+        line-height: 1.5;
+        max-width: 26ch;
+      }
+
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .product-id {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #64748b;
+      }
+
+      .product-name {
+        margin: 0;
+        font-size: clamp(1.85rem, 4.5vw, 2.6rem);
+        color: #111827;
+        line-height: 1.2;
+      }
+
+      .product-price {
+        margin: 0;
+        font-weight: 600;
+        color: #047857;
+        font-size: 1.15rem;
+      }
+
+      .product-price[hidden] {
+        display: none !important;
+      }
+
+      .product-description {
+        margin: 0;
+        color: #425466;
+        line-height: 1.65;
+        font-size: 1rem;
+      }
+
+      .product-description--muted {
+        color: #64748b;
+        font-style: italic;
+      }
+
+      .product-description--code {
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular,
+          Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: rgba(15, 23, 42, 0.06);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .product-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .product-actions[hidden] {
+        display: none !important;
+      }
+
+      .product-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.1rem;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        color: #ffffff;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .product-action:hover,
+      .product-action:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 26px rgba(99, 102, 241, 0.25);
+        outline: none;
+      }
+
+      .product-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.3);
+      }
+
+      .product-section h2 {
+        margin: 0 0 1rem;
+        font-size: 1.2rem;
+        color: #0f172a;
+      }
+
+      .product-attributes {
+        display: grid;
+        grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+        gap: 0.75rem 1.5rem;
+        margin: 0;
+      }
+
+      .product-attributes dt {
+        font-weight: 600;
+        color: #1e3a8a;
+        margin: 0;
+      }
+
+      .product-attributes dd {
+        margin: 0;
+        color: #334155;
+        line-height: 1.55;
+      }
+
+      .attribute-value--code {
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular,
+          Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: rgba(15, 23, 42, 0.04);
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .product-raw {
+        margin: 0;
+        padding: 1.25rem 1.5rem;
+        background: #0f172a;
+        border-radius: 14px;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        overflow-x: auto;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          width: min(100%, calc(100% - 1.5rem));
+        }
+
+        header {
+          text-align: left;
+        }
+
+        h1 {
+          font-size: clamp(1.8rem, 6vw, 2.3rem);
+        }
+
+        .intro {
+          font-size: 1rem;
+        }
+
+        .product-media {
+          min-height: 240px;
+        }
+
+        .product-attributes {
+          grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="back-link" href="products.html" aria-label="Back to the product list">
+          <span aria-hidden="true">&#8592;</span>
+          Back to products
+        </a>
+        <h1>Product details</h1>
+        <p class="intro">
+          View the full details of a single product retrieved in real time from the Monitta
+          Store product API.
+        </p>
+      </header>
+
+      <p id="status" role="status" aria-live="polite">Loading product details…</p>
+
+      <article id="product-card" hidden>
+        <div class="product-card__layout">
+          <div class="product-media" id="product-media">
+            <img id="product-image" alt="Product image" loading="lazy" hidden />
+            <div class="product-media__placeholder" id="image-fallback">
+              No product image available for this listing.
+            </div>
+          </div>
+
+          <div class="product-info">
+            <p class="product-id" id="product-id" hidden></p>
+            <h2 class="product-name" id="product-name">Product</h2>
+            <p class="product-price" id="product-price" hidden></p>
+            <p class="product-description" id="product-description"></p>
+
+            <div class="product-actions" id="product-actions" hidden>
+              <a id="product-url" class="product-action" target="_blank" rel="noopener"
+                >Open original listing</a
+              >
+            </div>
+
+            <section class="product-section" id="product-attributes-section" hidden>
+              <h2>Key attributes</h2>
+              <dl class="product-attributes" id="product-attributes"></dl>
+            </section>
+
+            <section class="product-section" id="product-raw-section" hidden>
+              <h2>Raw API response</h2>
+              <pre class="product-raw" id="product-raw"></pre>
+            </section>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <script>
+      const apiBaseUrl =
+        "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
+      const statusElement = document.getElementById("status");
+      const productCard = document.getElementById("product-card");
+      const productIdElement = document.getElementById("product-id");
+      const productNameElement = document.getElementById("product-name");
+      const productPriceElement = document.getElementById("product-price");
+      const productDescriptionElement = document.getElementById("product-description");
+      const productActionsElement = document.getElementById("product-actions");
+      const productUrlElement = document.getElementById("product-url");
+      const productAttributesSection = document.getElementById("product-attributes-section");
+      const productAttributesElement = document.getElementById("product-attributes");
+      const productRawSection = document.getElementById("product-raw-section");
+      const productRawElement = document.getElementById("product-raw");
+      const productImage = document.getElementById("product-image");
+      const imageFallback = document.getElementById("image-fallback");
+
+      function getProductIdFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const keys = ["productID", "productId", "id"];
+        for (const key of keys) {
+          const value = params.get(key);
+          if (typeof value === "string" && value.trim()) {
+            return value.trim();
+          }
+        }
+        return "";
+      }
+
+      function resolveField(object, candidates, fallback = "") {
+        if (!object || typeof object !== "object") {
+          return fallback;
+        }
+
+        for (const key of candidates) {
+          if (key in object && object[key] != null && object[key] !== "") {
+            return object[key];
+          }
+        }
+
+        return fallback;
+      }
+
+      function formatPrice(value, currency) {
+        if (value == null || value === "") {
+          return "";
+        }
+
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) {
+          if (typeof currency === "string" && currency.trim()) {
+            try {
+              return new Intl.NumberFormat(undefined, {
+                style: "currency",
+                currency: currency.trim().toUpperCase(),
+              }).format(numeric);
+            } catch (error) {
+              return `${numeric.toFixed(2)} ${currency}`;
+            }
+          }
+
+          return numeric.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          });
+        }
+
+        return "";
+      }
+
+      function formatAttributeLabel(key) {
+        return key
+          .replace(/[_\-]+/g, " ")
+          .replace(/([a-z\d])([A-Z])/g, "$1 $2")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/\b\w/g, (match) => match.toUpperCase());
+      }
+
+      function formatAttributeValue(value) {
+        if (value == null) {
+          return null;
+        }
+
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return null;
+          }
+          return { text: trimmed, isCode: false };
+        }
+
+        if (typeof value === "number" || typeof value === "bigint") {
+          return { text: String(value), isCode: false };
+        }
+
+        if (typeof value === "boolean") {
+          return { text: value ? "Yes" : "No", isCode: false };
+        }
+
+        if (Array.isArray(value)) {
+          if (!value.length) {
+            return null;
+          }
+
+          const formattedItems = [];
+          let hasCode = false;
+          for (const item of value) {
+            const formatted = formatAttributeValue(item);
+            if (formatted) {
+              formattedItems.push(formatted.text);
+              hasCode ||= formatted.isCode;
+            }
+          }
+
+          if (!formattedItems.length) {
+            return null;
+          }
+
+          return { text: formattedItems.join(", "), isCode: hasCode };
+        }
+
+        try {
+          return { text: JSON.stringify(value, null, 2), isCode: true };
+        } catch (error) {
+          return { text: String(value), isCode: true };
+        }
+      }
+
+      function formatDescription(product) {
+        const description = resolveField(product, [
+          "description",
+          "summary",
+          "details",
+          "text",
+          "subtitle",
+          "longDescription",
+        ]);
+
+        if (!description) {
+          return {
+            text: "No description is available for this product.",
+            isCode: false,
+            isFallback: true,
+          };
+        }
+
+        if (typeof description === "object") {
+          try {
+            return {
+              text: JSON.stringify(description, null, 2),
+              isCode: true,
+              isFallback: false,
+            };
+          } catch (error) {
+            return {
+              text: String(description),
+              isCode: true,
+              isFallback: false,
+            };
+          }
+        }
+
+        const text = String(description).trim();
+        if (!text) {
+          return {
+            text: "No description is available for this product.",
+            isCode: false,
+            isFallback: true,
+          };
+        }
+
+        const looksLikeJson = text.startsWith("{") || text.startsWith("[");
+        return { text, isCode: looksLikeJson, isFallback: false };
+      }
+
+      function extractProduct(payload) {
+        if (!payload) {
+          return null;
+        }
+
+        if (Array.isArray(payload)) {
+          return payload[0] ?? null;
+        }
+
+        if (typeof payload === "object") {
+          const candidateKeys = ["product", "data", "item", "result", "payload"];
+          for (const key of candidateKeys) {
+            if (payload[key] && typeof payload[key] === "object") {
+              return payload[key];
+            }
+          }
+        }
+
+        if (typeof payload === "object") {
+          return payload;
+        }
+
+        return null;
+      }
+
+      function renderAttributes(product, excludeKeys) {
+        productAttributesElement.innerHTML = "";
+        const excluded = new Set(excludeKeys.map((key) => key.toLowerCase()));
+        let renderedCount = 0;
+
+        for (const [key, value] of Object.entries(product)) {
+          if (excluded.has(key.toLowerCase())) {
+            continue;
+          }
+
+          const formatted = formatAttributeValue(value);
+          if (!formatted) {
+            continue;
+          }
+
+          const dt = document.createElement("dt");
+          dt.textContent = formatAttributeLabel(key);
+
+          const dd = document.createElement("dd");
+          dd.textContent = formatted.text;
+          if (formatted.isCode || formatted.text.includes("\n")) {
+            dd.classList.add("attribute-value--code");
+          }
+
+          productAttributesElement.append(dt, dd);
+          renderedCount += 1;
+        }
+
+        productAttributesSection.hidden = renderedCount === 0;
+      }
+
+      async function loadProduct() {
+        const productId = getProductIdFromQuery();
+
+        if (!productId) {
+          statusElement.textContent =
+            "Missing productID parameter. Append ?productID=<id> to the page URL.";
+          productCard.hidden = true;
+          return;
+        }
+
+        statusElement.hidden = false;
+        statusElement.textContent = "Loading product details…";
+        productCard.hidden = true;
+
+        const url = `${apiBaseUrl}/${encodeURIComponent(productId)}`;
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const product = extractProduct(payload);
+
+          if (!product || typeof product !== "object") {
+            statusElement.textContent = "No product details were returned for this identifier.";
+            productCard.hidden = true;
+            return;
+          }
+
+          const title =
+            resolveField(product, ["name", "title", "productName", "label"], `Product ${productId}`) ||
+            `Product ${productId}`;
+          productNameElement.textContent = title;
+          document.title = `${title} – Monitta Store`;
+
+          const knownId = resolveField(product, [
+            "id",
+            "productID",
+            "productId",
+            "listingId",
+            "sku",
+            "identifier",
+          ]);
+          if (knownId) {
+            productIdElement.textContent = `Product ID: ${knownId}`;
+            productIdElement.hidden = false;
+          } else {
+            productIdElement.textContent = `Product ID: ${productId}`;
+            productIdElement.hidden = false;
+          }
+
+          const priceValue = resolveField(product, [
+            "priceFormatted",
+            "price",
+            "priceValue",
+            "amount",
+            "currentPrice",
+            "salePrice",
+          ]);
+          const currency = resolveField(product, [
+            "currency",
+            "priceCurrency",
+            "currencyCode",
+            "currencySymbol",
+          ]);
+          const formattedPrice = formatPrice(priceValue, currency);
+          if (formattedPrice) {
+            productPriceElement.textContent = formattedPrice;
+            productPriceElement.hidden = false;
+          } else {
+            productPriceElement.hidden = true;
+          }
+
+          const { text: descriptionText, isCode: descriptionIsCode, isFallback } =
+            formatDescription(product);
+          productDescriptionElement.textContent = descriptionText;
+          productDescriptionElement.classList.toggle(
+            "product-description--code",
+            descriptionIsCode,
+          );
+          productDescriptionElement.classList.toggle(
+            "product-description--muted",
+            isFallback,
+          );
+
+          const productUrl = resolveField(product, ["url", "link", "productUrl", "href"]);
+          if (productUrl) {
+            productUrlElement.href = productUrl;
+            productUrlElement.hidden = false;
+            productActionsElement.hidden = false;
+          } else {
+            productUrlElement.removeAttribute("href");
+            productActionsElement.hidden = true;
+          }
+
+          const imageUrl = resolveField(product, [
+            "imageUrl",
+            "image",
+            "thumbnailUrl",
+            "thumbnail",
+            "picture",
+            "photo",
+          ]);
+          if (imageUrl) {
+            productImage.src = imageUrl;
+            productImage.alt = `${title} image`;
+            productImage.hidden = false;
+            imageFallback.hidden = true;
+          } else {
+            productImage.hidden = true;
+            productImage.removeAttribute("src");
+            imageFallback.hidden = false;
+          }
+
+          const excludedKeys = [
+            "name",
+            "title",
+            "productName",
+            "label",
+            "description",
+            "summary",
+            "details",
+            "text",
+            "subtitle",
+            "longDescription",
+            "url",
+            "link",
+            "productUrl",
+            "href",
+            "imageUrl",
+            "image",
+            "thumbnailUrl",
+            "thumbnail",
+            "picture",
+            "photo",
+            "priceFormatted",
+            "price",
+            "priceValue",
+            "amount",
+            "currentPrice",
+            "salePrice",
+            "currency",
+            "priceCurrency",
+            "currencyCode",
+            "currencySymbol",
+            "id",
+            "productID",
+            "productId",
+            "listingId",
+            "sku",
+            "identifier",
+          ];
+
+          renderAttributes(product, excludedKeys);
+
+          try {
+            productRawElement.textContent = JSON.stringify(product, null, 2);
+            productRawSection.hidden = false;
+          } catch (error) {
+            productRawElement.textContent = String(product);
+            productRawSection.hidden = false;
+          }
+
+          statusElement.textContent = "";
+          statusElement.hidden = true;
+          productCard.hidden = false;
+        } catch (error) {
+          console.error(error);
+          statusElement.hidden = false;
+          statusElement.textContent =
+            "We could not load product information. Please verify the product ID and try again.";
+          productCard.hidden = true;
+        }
+      }
+
+      loadProduct();
+    </script>
+  </body>
+</html>
