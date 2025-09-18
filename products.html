@@ -77,6 +77,15 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
 
+      .product-card--interactive {
+        cursor: pointer;
+      }
+
+      .product-card--interactive:focus-visible {
+        outline: 3px solid rgba(26, 86, 219, 0.45);
+        outline-offset: 4px;
+      }
+
       .product-card:hover,
       .product-card:focus-within {
         transform: translateY(-4px);
@@ -259,6 +268,26 @@
         }
       }
 
+      function createProductDetailsUrl(productId) {
+        if (productId == null) {
+          return "";
+        }
+
+        const normalizedId = String(productId).trim();
+        if (!normalizedId) {
+          return "";
+        }
+
+        try {
+          const detailsUrl = new URL("product.html", window.location.href);
+          detailsUrl.searchParams.set("productID", normalizedId);
+          return detailsUrl.toString();
+        } catch (error) {
+          const encodedId = encodeURIComponent(normalizedId);
+          return `product.html?productID=${encodedId}`;
+        }
+      }
+
       async function loadProducts() {
         statusElement.textContent = "Loading products…";
         try {
@@ -297,6 +326,19 @@
             const title =
               resolveField(product, ["name", "title", "productName", "label"], "Product");
             const url = resolveField(product, ["url", "link", "productUrl", "href"]);
+            let productId = resolveField(product, [
+              "productID",
+              "productId",
+              "id",
+              "Id",
+            ]);
+            if (productId != null) {
+              productId =
+                typeof productId === "string"
+                  ? productId.trim()
+                  : String(productId).trim();
+            }
+            const detailsPageUrl = createProductDetailsUrl(productId);
             const imageUrl = resolveField(product, [
               "imageUrl",
               "image",
@@ -320,7 +362,34 @@
             ]);
 
             nameLink.textContent = title;
-            if (url) {
+            if (detailsPageUrl) {
+              nameLink.href = detailsPageUrl;
+              nameLink.removeAttribute("target");
+              nameLink.removeAttribute("rel");
+
+              card.classList.add("product-card--interactive");
+              card.dataset.productId = productId;
+              card.setAttribute("role", "link");
+              card.tabIndex = 0;
+
+              const navigateToDetails = () => {
+                window.location.href = detailsPageUrl;
+              };
+
+              card.addEventListener("click", (event) => {
+                if (event.target.closest("a, button")) {
+                  return;
+                }
+                navigateToDetails();
+              });
+
+              card.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  navigateToDetails();
+                }
+              });
+            } else if (url) {
               nameLink.href = url;
               nameLink.target = "_blank";
               nameLink.rel = "noopener noreferrer";
