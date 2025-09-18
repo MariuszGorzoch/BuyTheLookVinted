@@ -221,6 +221,43 @@
         color: #4338ca;
       }
 
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 0.5rem;
+      }
+
+      .form-actions button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.9rem 2.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      }
+
+      .form-actions button:hover,
+      .form-actions button:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(99, 102, 241, 0.25);
+        outline: none;
+      }
+
+      .form-actions button:active {
+        transform: translateY(1px);
+        box-shadow: 0 8px 18px rgba(99, 102, 241, 0.25);
+      }
+
+      .form-actions button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.7;
+        box-shadow: none;
+        transform: none;
+      }
+
       .placeholder {
         color: #6b7280;
         font-style: italic;
@@ -306,11 +343,11 @@
           </div>
           <div class="field">
             <label for="product-name">Nazwa stylizacji</label>
-            <input type="text" id="product-name" name="product-name" readonly />
+            <input type="text" id="product-name" name="product-name" />
           </div>
           <div class="field">
             <label for="product-description">Opis</label>
-            <textarea id="product-description" name="product-description" readonly></textarea>
+            <textarea id="product-description" name="product-description"></textarea>
           </div>
         </fieldset>
 
@@ -352,6 +389,10 @@
           <legend>Surowe dane z interfejsu API</legend>
           <pre id="raw-json">Ładowanie…</pre>
         </fieldset>
+
+        <div class="form-actions">
+          <button type="button" id="save-button">Zapisz</button>
+        </div>
       </form>
     </main>
     <script>
@@ -366,6 +407,7 @@
         const newImagesPreview = document.getElementById("new-images-preview");
         const vintageList = document.getElementById("vintage-products");
         const rawJson = document.getElementById("raw-json");
+        const saveButton = document.getElementById("save-button");
 
         const apiBaseUrl =
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
@@ -373,9 +415,52 @@
         const params = new URLSearchParams(window.location.search);
         const productId = params.get("productID") ?? params.get("id");
 
+        let currentProduct = null;
+        let isSaving = false;
+
+        const defaultSaveLabel =
+          saveButton && typeof saveButton.textContent === "string"
+            ? saveButton.textContent.trim() || "Zapisz"
+            : "Zapisz";
+        const savingLabel = "Zapisywanie…";
+
+        const hasProductData = (product) =>
+          !!(product && typeof product === "object" && Object.keys(product).length > 0);
+
+        const updateSaveButtonState = () => {
+          if (!saveButton) {
+            return;
+          }
+
+          const shouldDisable = isSaving || !hasProductData(currentProduct);
+          saveButton.disabled = shouldDisable;
+          saveButton.textContent = isSaving ? savingLabel : defaultSaveLabel;
+        };
+
+        const setSavingState = (saving) => {
+          isSaving = saving;
+
+          if (saveButton) {
+            saveButton.setAttribute("aria-busy", saving ? "true" : "false");
+          }
+
+          updateSaveButtonState();
+        };
+
+        updateSaveButtonState();
+
         const setStatus = (message, type = "info") => {
+          if (!statusElement) {
+            return;
+          }
+
           statusElement.textContent = message;
-          statusElement.dataset.statusType = type;
+          if (type === "info") {
+            delete statusElement.dataset.statusType;
+          } else {
+            statusElement.dataset.statusType = type;
+          }
+          statusElement.hidden = false;
         };
 
         const toArray = (value) => {
@@ -413,6 +498,99 @@
           return fallback;
         };
 
+        const toDisplayString = (value) => {
+          if (value == null) {
+            return "";
+          }
+
+          if (typeof value === "string") {
+            return value;
+          }
+
+          if (typeof value === "number" || typeof value === "bigint") {
+            return String(value);
+          }
+
+          if (typeof value === "boolean") {
+            return value ? "true" : "false";
+          }
+
+          return String(value);
+        };
+
+        const cloneProduct = (product) => {
+          if (!product || typeof product !== "object") {
+            return {};
+          }
+
+          if (typeof structuredClone === "function") {
+            try {
+              return structuredClone(product);
+            } catch (error) {
+              // Ignore cloning errors and fall back to alternative strategies.
+            }
+          }
+
+          try {
+            return JSON.parse(JSON.stringify(product));
+          } catch (error) {
+            return { ...product };
+          }
+        };
+
+        const updateKnownFields = (target, keys, value) => {
+          if (!target || typeof target !== "object" || !Array.isArray(keys) || keys.length === 0) {
+            return;
+          }
+
+          let updated = false;
+          keys.forEach((key) => {
+            if (key in target) {
+              target[key] = value;
+              updated = true;
+            }
+          });
+
+          if (!updated) {
+            target[keys[0]] = value;
+          }
+        };
+
+        const ensureIdentifier = (target) => {
+          if (!target || typeof target !== "object") {
+            return target;
+          }
+
+          const fallbackId = (productId ?? idInput?.value ?? "").toString().trim();
+          if (!fallbackId) {
+            return target;
+          }
+
+          const identifierKeys = ["id", "Id", "ID", "productId", "productID"];
+          let found = false;
+
+          identifierKeys.forEach((key) => {
+            if (!(key in target)) {
+              return;
+            }
+
+            const value = target[key];
+            if (value != null && String(value).trim() !== "") {
+              found = true;
+              return;
+            }
+
+            target[key] = fallbackId;
+            found = true;
+          });
+
+          if (!found) {
+            target.id = fallbackId;
+          }
+
+          return target;
+        };
+
         const isImageFile = (file) => {
           if (!file) {
             return false;
@@ -441,6 +619,10 @@
         };
 
         const renderImages = (product) => {
+          if (!imagesContainer) {
+            return;
+          }
+
           const images = toArray(product?.images ?? product?.image ?? product?.photos);
           imagesContainer.innerHTML = "";
 
@@ -553,14 +735,19 @@
           });
         };
 
+        renderSelectedImages(newImagesInput?.files ?? []);
+
         if (newImagesInput) {
-          renderSelectedImages(newImagesInput.files);
           newImagesInput.addEventListener("change", () => {
             renderSelectedImages(newImagesInput.files);
           });
         }
 
         const renderVintageProducts = (product) => {
+          if (!vintageList) {
+            return;
+          }
+
           const vintageProducts = toArray(product?.vintageProducts ?? product?.relatedProducts);
           vintageList.innerHTML = "";
 
@@ -619,14 +806,178 @@
         };
 
         const populateForm = (product) => {
-          idInput.value = productId ?? "";
-          nameInput.value = product?.name ?? product?.title ?? "";
-          descriptionInput.value = product?.description ?? product?.summary ?? "";
+          const safeProduct = product && typeof product === "object" ? product : {};
 
-          renderImages(product);
-          renderVintageProducts(product);
+          if (idInput) {
+            idInput.value = productId ?? "";
+          }
 
-          rawJson.textContent = JSON.stringify(product, null, 2);
+          const resolvedName = resolveField(
+            safeProduct,
+            ["name", "title", "productName", "label"],
+            ""
+          );
+          if (nameInput) {
+            nameInput.value = toDisplayString(resolvedName);
+          }
+
+          const resolvedDescription = resolveField(
+            safeProduct,
+            ["description", "summary", "details", "productDescription"],
+            ""
+          );
+          if (descriptionInput) {
+            descriptionInput.value = toDisplayString(resolvedDescription);
+          }
+
+          renderImages(safeProduct);
+          renderVintageProducts(safeProduct);
+
+          if (rawJson) {
+            const hasContent = hasProductData(safeProduct);
+            rawJson.textContent = hasContent
+              ? JSON.stringify(safeProduct, null, 2)
+              : "Brak danych";
+          }
+
+          if (newImagesInput) {
+            newImagesInput.value = "";
+          }
+          renderSelectedImages(newImagesInput?.files ?? []);
+
+          const nameForTitle = nameInput ? nameInput.value.trim() : "";
+          document.title = nameForTitle
+            ? `${nameForTitle} — Edycja produktu`
+            : "Edycja produktu";
+        };
+
+        const assignProduct = (product) => {
+          currentProduct = cloneProduct(product);
+          populateForm(currentProduct);
+
+          if (form) {
+            form.hidden = false;
+          }
+
+          updateSaveButtonState();
+        };
+
+        const fetchProductDetails = async () => {
+          if (!productId) {
+            throw new Error("Brak identyfikatora produktu.");
+          }
+
+          const endpoint = `${apiBaseUrl}/${encodeURIComponent(productId)}`;
+          const response = await fetch(endpoint);
+
+          if (!response.ok) {
+            throw new Error(`Żądanie nie powiodło się. Kod odpowiedzi: ${response.status}`);
+          }
+
+          const product = await response.json();
+
+          if (!product || typeof product !== "object") {
+            throw new Error("Serwer zwrócił nieoczekiwany format danych.");
+          }
+
+          return product;
+        };
+
+        const buildUpdatePayload = () => {
+          if (!currentProduct || typeof currentProduct !== "object") {
+            return null;
+          }
+
+          const payload = cloneProduct(currentProduct);
+          const sanitizedName = nameInput ? nameInput.value.trim() : "";
+          const sanitizedDescription = descriptionInput ? descriptionInput.value.trim() : "";
+
+          updateKnownFields(payload, ["name", "title", "productName", "label"], sanitizedName);
+          updateKnownFields(
+            payload,
+            ["description", "summary", "details", "productDescription"],
+            sanitizedDescription
+          );
+          ensureIdentifier(payload);
+
+          return payload;
+        };
+
+        const saveProduct = async () => {
+          if (isSaving) {
+            return;
+          }
+
+          if (!productId) {
+            setStatus(
+              "Brak identyfikatora produktu. Upewnij się, że adres URL zawiera parametr ?productID=…",
+              "error"
+            );
+            return;
+          }
+
+          if (!currentProduct || !hasProductData(currentProduct)) {
+            setStatus("Brak danych produktu do zapisania.", "error");
+            return;
+          }
+
+          if (form && typeof form.reportValidity === "function" && !form.reportValidity()) {
+            return;
+          }
+
+          const payload = buildUpdatePayload();
+
+          if (!payload) {
+            setStatus("Nie udało się przygotować danych produktu do zapisu.", "error");
+            return;
+          }
+
+          setSavingState(true);
+          setStatus("Trwa zapisywanie zmian produktu…");
+
+          try {
+            const endpoint = `${apiBaseUrl}/${encodeURIComponent(productId)}`;
+            const response = await fetch(endpoint, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Żądanie nie powiodło się. Kod odpowiedzi: ${response.status}`);
+            }
+
+            let updatedProduct = null;
+            try {
+              updatedProduct = await response.json();
+            } catch (error) {
+              updatedProduct = null;
+            }
+
+            if (updatedProduct && typeof updatedProduct === "object") {
+              assignProduct(updatedProduct);
+            } else {
+              try {
+                const refreshed = await fetchProductDetails();
+                assignProduct(refreshed);
+              } catch (refreshError) {
+                console.error("Błąd podczas odświeżania danych produktu:", refreshError);
+                assignProduct(payload);
+              }
+            }
+
+            setStatus("Zmiany produktu zostały zapisane.", "success");
+          } catch (error) {
+            console.error("Błąd podczas zapisywania produktu:", error);
+            setStatus(
+              "Nie udało się zapisać zmian produktu. Spróbuj ponownie.",
+              "error"
+            );
+          } finally {
+            setSavingState(false);
+          }
         };
 
         const loadProduct = async () => {
@@ -635,30 +986,32 @@
               "Brak identyfikatora produktu w adresie URL. Użyj parametru ?productID=…",
               "error"
             );
+
+            if (form) {
+              form.hidden = true;
+            }
+
+            currentProduct = null;
+            updateSaveButtonState();
+
+            renderImages({});
+            renderVintageProducts({});
+            if (rawJson) {
+              rawJson.textContent = "Brak danych";
+            }
+            if (newImagesInput) {
+              newImagesInput.value = "";
+            }
+            renderSelectedImages(newImagesInput?.files ?? []);
+            document.title = "Edycja produktu";
             return;
           }
 
           setStatus("Trwa wczytywanie danych produktu…");
 
           try {
-            const endpoint = `${apiBaseUrl}/${encodeURIComponent(productId)}`;
-            const response = await fetch(endpoint);
-
-            if (!response.ok) {
-              throw new Error(`Żądanie nie powiodło się. Kod odpowiedzi: ${response.status}`);
-            }
-
-            const product = await response.json();
-
-            if (!product || typeof product !== "object") {
-              throw new Error("Serwer zwrócił nieoczekiwany format danych.");
-            }
-
-            populateForm(product);
-            document.title = product?.name
-              ? `${product.name} — Edycja produktu`
-              : "Edycja produktu";
-            form.hidden = false;
+            const product = await fetchProductDetails();
+            assignProduct(product);
             setStatus("Dane produktu zostały pomyślnie wczytane.", "success");
           } catch (error) {
             console.error("Błąd podczas wczytywania danych produktu:", error);
@@ -666,9 +1019,29 @@
               "Nie udało się wczytać szczegółów produktu. Upewnij się, że podany identyfikator jest poprawny.",
               "error"
             );
-            rawJson.textContent = "Brak danych";
+
+            if (rawJson) {
+              rawJson.textContent = "Brak danych";
+            }
+            renderImages({});
+            renderVintageProducts({});
+            if (newImagesInput) {
+              newImagesInput.value = "";
+            }
+            renderSelectedImages(newImagesInput?.files ?? []);
+            document.title = "Edycja produktu";
+
+            currentProduct = null;
+            if (form) {
+              form.hidden = true;
+            }
+            updateSaveButtonState();
           }
         };
+
+        if (saveButton) {
+          saveButton.addEventListener("click", saveProduct);
+        }
 
         loadProduct();
       })();
