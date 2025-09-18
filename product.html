@@ -187,6 +187,7 @@
         const descriptionInput = document.getElementById("description");
         const createButton = document.querySelector('[data-action="create"]');
         const saveButton = document.querySelector('[data-action="save"]');
+        const imagesInput = document.getElementById("product-images");
         const statusElement = document.createElement("p");
 
         statusElement.setAttribute("role", "status");
@@ -221,6 +222,38 @@
             localStorage.setItem("createdProduct", JSON.stringify(product));
           } catch (error) {
             console.warn("Nie udało się zapisać produktu w LocalStorage", error);
+          }
+        };
+
+        const uploadProductImages = async (product, files) => {
+          const selectedFiles = Array.from(files ?? []);
+
+          if (selectedFiles.length === 0) {
+            return;
+          }
+
+          const formData = new FormData();
+
+          for (const file of selectedFiles) {
+            formData.append("files", file);
+          }
+
+          const productId =
+            product?.id ?? product?.productId ?? product?.productID ?? product?.Id;
+
+          if (productId !== undefined && productId !== null) {
+            formData.append("productId", productId);
+          }
+
+          const response = await fetch("https://localhost:7193/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Przesyłanie zdjęć nie powiodło się (status: ${response.status})`
+            );
           }
         };
 
@@ -263,7 +296,34 @@
             state.createdProduct = productDetails;
             persistProduct(productDetails);
             toggleButtons(true);
-            showMessage("Produkt został pomyślnie utworzony.", "success");
+
+            const files = imagesInput?.files ?? [];
+
+            if (files.length > 0) {
+              showMessage(
+                "Produkt został utworzony. Trwa przesyłanie zdjęć...",
+                "info"
+              );
+
+              try {
+                await uploadProductImages(productDetails, files);
+                showMessage(
+                  "Produkt oraz zdjęcia zostały pomyślnie przesłane.",
+                  "success"
+                );
+                if (imagesInput) {
+                  imagesInput.value = "";
+                }
+              } catch (uploadError) {
+                console.error("Błąd podczas przesyłania zdjęć:", uploadError);
+                showMessage(
+                  "Produkt został utworzony, ale nie udało się przesłać zdjęć.",
+                  "error"
+                );
+              }
+            } else {
+              showMessage("Produkt został pomyślnie utworzony.", "success");
+            }
           } catch (error) {
             console.error("Błąd podczas tworzenia produktu:", error);
             showMessage(
