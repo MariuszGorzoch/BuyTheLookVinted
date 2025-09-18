@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edytuj produkt</title>
+    <title>Edycja produktu</title>
     <style>
       :root {
         color-scheme: light;
@@ -20,126 +20,470 @@
         margin: 0;
         min-height: 100vh;
         display: flex;
-        align-items: center;
+        align-items: stretch;
         justify-content: center;
         background: linear-gradient(145deg, #f7f7f7, #e9ecf1);
-        padding: 2rem 1rem;
+        padding: 2rem 1rem 3rem;
       }
 
       main {
-        width: min(520px, 100%);
-        margin-inline: auto;
+        width: min(960px, 100%);
+        margin: 0 auto;
         background: #ffffff;
-        border-radius: 18px;
-        padding: 2.5rem 2rem;
-        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+        border-radius: 24px;
+        padding: clamp(1.75rem, 2vw + 1rem, 2.75rem) clamp(1.5rem, 2vw + 0.75rem, 3rem);
+        box-shadow: 0 20px 55px rgba(15, 23, 42, 0.12);
         display: flex;
         flex-direction: column;
-        gap: 1.75rem;
+        gap: 2rem;
+      }
+
+      header {
+        text-align: center;
       }
 
       h1 {
         margin: 0;
-        font-size: clamp(1.75rem, 2vw + 1rem, 2.4rem);
-        text-align: center;
-        color: #212936;
-      }
-
-      p {
-        margin: 0;
-        font-size: 1.05rem;
+        font-size: clamp(1.85rem, 2.2vw + 1.2rem, 2.6rem);
         color: #1f2937;
-        line-height: 1.6;
       }
 
-      .highlight {
-        font-weight: 600;
-        color: #6366f1;
-      }
-
-      .actions {
-        display: flex;
-        justify-content: center;
-      }
-
-      a.button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        border-radius: 999px;
-        padding: 0.85rem 2.5rem;
-        font-weight: 600;
+      .subtitle {
+        margin-top: 0.5rem;
+        color: #4b5563;
         font-size: 1rem;
-        background: linear-gradient(120deg, #6366f1, #8b5cf6);
-        color: #ffffff;
+      }
+
+      #status {
+        margin: 0;
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        background: rgba(99, 102, 241, 0.06);
+        color: #312e81;
+        line-height: 1.5;
+        transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+      }
+
+      #status[data-status-type="error"] {
+        border-color: rgba(239, 68, 68, 0.35);
+        background: rgba(254, 226, 226, 0.65);
+        color: #991b1b;
+      }
+
+      #status[data-status-type="success"] {
+        border-color: rgba(16, 185, 129, 0.35);
+        background: rgba(209, 250, 229, 0.7);
+        color: #065f46;
+      }
+
+      form {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      fieldset {
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 1.25rem 1.5rem 1.5rem;
+        background: #f9fafb;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      legend {
+        font-weight: 600;
+        color: #1f2937;
+        padding: 0 0.5rem;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      label {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        padding: 0.85rem 1rem;
+        font: inherit;
+        color: #1f2937;
+        background-color: #ffffff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      }
+
+      input[readonly],
+      textarea[readonly] {
+        background-color: #f3f4f6;
+        color: #374151;
+      }
+
+      textarea {
+        min-height: 160px;
+        resize: vertical;
+      }
+
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+      }
+
+      .image-grid figure {
+        margin: 0;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      }
+
+      .image-grid img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 12px;
+        background-color: #e5e7eb;
+      }
+
+      .image-grid figcaption {
+        font-size: 0.875rem;
+        color: #4b5563;
+        text-align: center;
+      }
+
+      .placeholder {
+        color: #6b7280;
+        font-style: italic;
+      }
+
+      .vintage-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .vintage-item {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 0.85rem 1rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .vintage-item a {
+        color: #2563eb;
+        font-weight: 600;
         text-decoration: none;
-        cursor: pointer;
-        transition: transform 0.15s ease, box-shadow 0.2s ease;
       }
 
-      a.button:hover,
-      a.button:focus {
-        transform: translateY(-1px);
-        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.25);
-        outline: none;
+      .vintage-item a:hover,
+      .vintage-item a:focus {
+        text-decoration: underline;
       }
 
-      a.button:active {
-        transform: translateY(1px);
-        box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
+      .vintage-item small {
+        color: #6b7280;
       }
 
-      @media (max-width: 480px) {
+      pre {
+        margin: 0;
+        padding: 1rem;
+        background: #0f172a;
+        color: #e0f2fe;
+        border-radius: 14px;
+        max-height: 360px;
+        overflow: auto;
+        font-size: 0.875rem;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 1.5rem 0.75rem 2rem;
+        }
+
         main {
-          padding: 2rem 1.5rem;
+          border-radius: 18px;
+          padding: 1.75rem 1.25rem 2rem;
         }
 
-        a.button {
-          width: 100%;
+        fieldset {
+          padding: 1rem 1rem 1.25rem;
         }
-      }
-
-      .status-error {
-        color: #b91c1c;
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Edytuj produkt</h1>
-      <p id="product-status">Trwa ładowanie danych produktu…</p>
-      <div class="actions">
-        <a class="button" href="product_add.html">Dodaj nowy produkt</a>
-      </div>
+      <header>
+        <h1>Edycja produktu</h1>
+        <p class="subtitle">
+          Wczytaj szczegóły istniejącej stylizacji, korzystając z identyfikatora produktu.
+        </p>
+      </header>
+      <p id="status" role="status" aria-live="polite"></p>
+      <form id="product-form" hidden novalidate>
+        <fieldset>
+          <legend>Podstawowe informacje</legend>
+          <div class="field">
+            <label for="product-id">Identyfikator produktu</label>
+            <input type="text" id="product-id" name="product-id" readonly />
+          </div>
+          <div class="field">
+            <label for="product-name">Nazwa stylizacji</label>
+            <input type="text" id="product-name" name="product-name" readonly />
+          </div>
+          <div class="field">
+            <label for="product-description">Opis</label>
+            <textarea id="product-description" name="product-description" readonly></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Zdjęcia produktu</legend>
+          <div id="product-images" class="image-grid">
+            <p class="placeholder">Brak zdjęć do wyświetlenia.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Produkty vintage</legend>
+          <ul id="vintage-products" class="vintage-list">
+            <li class="placeholder">Brak powiązanych produktów vintage.</li>
+          </ul>
+        </fieldset>
+
+        <fieldset>
+          <legend>Surowe dane z interfejsu API</legend>
+          <pre id="raw-json">Ładowanie…</pre>
+        </fieldset>
+      </form>
     </main>
     <script>
       (function () {
-        const statusElement = document.getElementById("product-status");
-        const searchParams = new URLSearchParams(window.location.search);
-        const productId = searchParams.get("productID");
+        const statusElement = document.getElementById("status");
+        const form = document.getElementById("product-form");
+        const idInput = document.getElementById("product-id");
+        const nameInput = document.getElementById("product-name");
+        const descriptionInput = document.getElementById("product-description");
+        const imagesContainer = document.getElementById("product-images");
+        const vintageList = document.getElementById("vintage-products");
+        const rawJson = document.getElementById("raw-json");
 
-        if (!productId) {
-          statusElement.textContent =
-            "Nie znaleziono identyfikatora produktu w adresie URL.";
-          statusElement.classList.add("status-error");
-          return;
-        }
+        const apiBaseUrl =
+          "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
 
-        const trimmedId = productId.trim();
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get("id");
 
-        if (!trimmedId) {
-          statusElement.textContent =
-            "Przekazany identyfikator produktu jest pusty.";
-          statusElement.classList.add("status-error");
-          return;
-        }
+        const setStatus = (message, type = "info") => {
+          statusElement.textContent = message;
+          statusElement.dataset.statusType = type;
+        };
 
-        statusElement.innerHTML =
-          'Produkt o identyfikatorze <span class="highlight"></span> jest gotowy do edycji.';
+        const toArray = (value) => {
+          if (Array.isArray(value)) {
+            return value;
+          }
 
-        const idElement = statusElement.querySelector(".highlight");
-        idElement.textContent = trimmedId;
+          if (!value) {
+            return [];
+          }
+
+          if (typeof value === "object") {
+            if (Array.isArray(value.items)) {
+              return value.items;
+            }
+            if (Array.isArray(value.data)) {
+              return value.data;
+            }
+          }
+
+          return [];
+        };
+
+        const resolveField = (source, candidates, fallback = "") => {
+          if (typeof source !== "object" || source === null) {
+            return fallback;
+          }
+
+          for (const key of candidates) {
+            if (key in source && source[key] != null && source[key] !== "") {
+              return source[key];
+            }
+          }
+
+          return fallback;
+        };
+
+        const renderImages = (product) => {
+          const images = toArray(product?.images ?? product?.image ?? product?.photos);
+          imagesContainer.innerHTML = "";
+
+          let rendered = 0;
+          images.forEach((image, index) => {
+            const url =
+              typeof image === "string"
+                ? image
+                : resolveField(image, ["url", "imageUrl", "src", "href", "link"]);
+
+            if (!url) {
+              return;
+            }
+
+            const altText =
+              typeof image === "object" && image !== null
+                ? resolveField(image, ["alt", "description", "title"], `Zdjęcie ${index + 1}`)
+                : `Zdjęcie ${index + 1}`;
+
+            const figure = document.createElement("figure");
+            const img = document.createElement("img");
+            const caption = document.createElement("figcaption");
+
+            img.src = url;
+            img.loading = "lazy";
+            img.alt = altText;
+            caption.textContent = altText;
+
+            figure.appendChild(img);
+            figure.appendChild(caption);
+            imagesContainer.appendChild(figure);
+            rendered += 1;
+          });
+
+          if (rendered === 0) {
+            const empty = document.createElement("p");
+            empty.className = "placeholder";
+            empty.textContent = "Brak zdjęć do wyświetlenia.";
+            imagesContainer.appendChild(empty);
+          }
+        };
+
+        const renderVintageProducts = (product) => {
+          const vintageProducts = toArray(product?.vintageProducts ?? product?.relatedProducts);
+          vintageList.innerHTML = "";
+
+          if (vintageProducts.length === 0) {
+            const empty = document.createElement("li");
+            empty.className = "placeholder";
+            empty.textContent = "Brak powiązanych produktów vintage.";
+            vintageList.appendChild(empty);
+            return;
+          }
+
+          vintageProducts.forEach((item, index) => {
+            const listItem = document.createElement("li");
+            listItem.className = "vintage-item";
+
+            if (item && typeof item === "object") {
+              const title =
+                resolveField(item, ["name", "title", "productName", "label"], `Produkt ${index + 1}`);
+              const url = resolveField(item, ["url", "link", "productUrl", "href"]);
+              const price = resolveField(item, ["price", "amount", "value"]);
+              const currency = resolveField(item, ["currency", "currencyCode", "priceCurrency"], "");
+              const description = resolveField(item, ["description", "summary", "details"]);
+
+              if (url) {
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.target = "_blank";
+                anchor.rel = "noopener";
+                anchor.textContent = title;
+                listItem.appendChild(anchor);
+              } else {
+                const nameElement = document.createElement("strong");
+                nameElement.textContent = title;
+                listItem.appendChild(nameElement);
+              }
+
+              if (price) {
+                const priceElement = document.createElement("small");
+                priceElement.textContent = currency ? `${price} ${currency}` : `${price}`;
+                listItem.appendChild(priceElement);
+              }
+
+              if (description) {
+                const descriptionElement = document.createElement("p");
+                descriptionElement.textContent = description;
+                descriptionElement.style.margin = "0";
+                descriptionElement.style.color = "#4b5563";
+                listItem.appendChild(descriptionElement);
+              }
+            } else {
+              listItem.textContent = String(item);
+            }
+
+            vintageList.appendChild(listItem);
+          });
+        };
+
+        const populateForm = (product) => {
+          idInput.value = productId ?? "";
+          nameInput.value = product?.name ?? product?.title ?? "";
+          descriptionInput.value = product?.description ?? product?.summary ?? "";
+
+          renderImages(product);
+          renderVintageProducts(product);
+
+          rawJson.textContent = JSON.stringify(product, null, 2);
+        };
+
+        const loadProduct = async () => {
+          if (!productId) {
+            setStatus("Brak identyfikatora produktu w adresie URL.", "error");
+            return;
+          }
+
+          setStatus("Trwa wczytywanie danych produktu…");
+
+          try {
+            const endpoint = `${apiBaseUrl}/${encodeURIComponent(productId)}`;
+            const response = await fetch(endpoint);
+
+            if (!response.ok) {
+              throw new Error(`Żądanie nie powiodło się. Kod odpowiedzi: ${response.status}`);
+            }
+
+            const product = await response.json();
+
+            if (!product || typeof product !== "object") {
+              throw new Error("Serwer zwrócił nieoczekiwany format danych.");
+            }
+
+            populateForm(product);
+            document.title = product?.name
+              ? `${product.name} — Edycja produktu`
+              : "Edycja produktu";
+            form.hidden = false;
+            setStatus("Dane produktu zostały pomyślnie wczytane.", "success");
+          } catch (error) {
+            console.error("Błąd podczas wczytywania danych produktu:", error);
+            setStatus(
+              "Nie udało się wczytać szczegółów produktu. Upewnij się, że podany identyfikator jest poprawny.",
+              "error"
+            );
+            rawJson.textContent = "Brak danych";
+          }
+        };
+
+        loadProduct();
       })();
     </script>
   </body>
