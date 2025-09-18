@@ -31,22 +31,8 @@
       }
 
       header {
-        text-align: center;
-        margin-bottom: clamp(2rem, 6vw, 3rem);
-      }
-
-      h1 {
-        margin: 0 0 0.75rem;
-        font-size: clamp(2rem, 5vw, 2.75rem);
-        color: #101827;
-      }
-
-      .intro {
-        margin: 0 auto;
-        max-width: 60ch;
-        color: #52606d;
-        font-size: 1.05rem;
-        line-height: 1.6;
+        text-align: left;
+        margin-bottom: clamp(1.5rem, 5vw, 2.25rem);
       }
 
       .back-link {
@@ -63,7 +49,7 @@
       .header-actions {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 0.75rem;
         flex-wrap: wrap;
         margin-bottom: 1.5rem;
@@ -119,7 +105,7 @@
         display: grid;
         gap: clamp(1.75rem, 4vw, 2.75rem);
         grid-template-columns: minmax(240px, 0.85fr) minmax(260px, 1fr);
-        align-items: start;
+        align-items: stretch;
       }
 
       .product-vintage {
@@ -153,23 +139,6 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        max-height: clamp(18rem, 45vh, 26rem);
-        overflow-y: auto;
-        padding-right: 0.25rem;
-        scrollbar-width: thin;
-      }
-
-      .product-vintage__list::-webkit-scrollbar {
-        width: 0.45rem;
-      }
-
-      .product-vintage__list::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .product-vintage__list::-webkit-scrollbar-thumb {
-        background: rgba(148, 163, 184, 0.5);
-        border-radius: 999px;
       }
 
       .product-vintage__item {
@@ -254,9 +223,6 @@
           grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
 
-        .product-vintage__list {
-          max-height: clamp(18rem, 52vh, 28rem);
-        }
       }
 
       .product-media {
@@ -436,18 +402,6 @@
           width: min(100%, calc(100% - 1.5rem));
         }
 
-        header {
-          text-align: left;
-        }
-
-        h1 {
-          font-size: clamp(1.8rem, 6vw, 2.3rem);
-        }
-
-        .intro {
-          font-size: 1rem;
-        }
-
         .header-actions {
           justify-content: flex-start;
         }
@@ -458,10 +412,6 @@
 
         .product-vintage {
           order: -1;
-        }
-
-        .product-vintage__list {
-          max-height: none;
         }
 
         .product-media {
@@ -489,11 +439,6 @@
             Edit product
           </a>
         </div>
-        <h1>Product details</h1>
-        <p class="intro">
-          View the full details of a single product retrieved in real time from the Monitta
-          Store product API.
-        </p>
       </header>
 
       <p id="status" role="status" aria-live="polite">Loading product details…</p>
