@@ -53,11 +53,44 @@
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        margin-bottom: 1.25rem;
+        margin: 0;
         color: #1a56db;
         text-decoration: none;
         font-weight: 600;
         transition: color 0.2s ease;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+
+      .edit-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 1.15rem;
+        border-radius: 999px;
+        background: linear-gradient(120deg, #6366f1, #3b82f6);
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .edit-link:hover,
+      .edit-link:focus-visible {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
+      }
+
+      .edit-link:focus {
+        outline: none;
       }
 
       .back-link:hover,
@@ -392,7 +425,8 @@
 
         .product-carousel__indicator,
         .product-carousel__nav,
-        .product-vintage__link {
+        .product-vintage__link,
+        .edit-link {
           transition: none;
         }
       }
@@ -412,6 +446,10 @@
 
         .intro {
           font-size: 1rem;
+        }
+
+        .header-actions {
+          justify-content: flex-start;
         }
 
         .product-card__layout {
@@ -436,10 +474,21 @@
   <body>
     <main>
       <header>
-        <a class="back-link" href="products.html" aria-label="Back to the product list">
-          <span aria-hidden="true">&#8592;</span>
-          Back to products
-        </a>
+        <div class="header-actions">
+          <a class="back-link" href="products.html" aria-label="Back to the product list">
+            <span aria-hidden="true">&#8592;</span>
+            Back to products
+          </a>
+          <a
+            class="edit-link"
+            id="edit-product-button"
+            href="product_edit.html"
+            aria-label="Edit this product"
+            hidden
+          >
+            Edit product
+          </a>
+        </div>
         <h1>Product details</h1>
         <p class="intro">
           View the full details of a single product retrieved in real time from the Monitta
@@ -1398,6 +1447,8 @@
         }
       }
 
+      const editProductLink = document.getElementById("edit-product-button");
+      const defaultEditProductLabel = "Edit this product";
       const statusElement = document.getElementById("status");
       const productCard = document.getElementById("product-card");
       const vintageSection = document.getElementById("product-vintage-section");
@@ -1641,6 +1692,32 @@
         return "";
       }
 
+      function updateEditProductLink(productId, title = "") {
+        if (!editProductLink) {
+          return;
+        }
+
+        const trimmedId = typeof productId === "string" ? productId.trim() : "";
+        const trimmedTitle = typeof title === "string" ? title.trim() : "";
+
+        if (trimmedId) {
+          editProductLink.href = `product_edit.html?productID=${encodeURIComponent(trimmedId)}`;
+          editProductLink.hidden = false;
+          if (trimmedTitle) {
+            editProductLink.setAttribute(
+              "aria-label",
+              `Edit product “${trimmedTitle}”`,
+            );
+          } else {
+            editProductLink.setAttribute("aria-label", defaultEditProductLabel);
+          }
+        } else {
+          editProductLink.hidden = true;
+          editProductLink.removeAttribute("href");
+          editProductLink.setAttribute("aria-label", defaultEditProductLabel);
+        }
+      }
+
       function resolveField(object, candidates, fallback = "") {
         if (!object || typeof object !== "object") {
           return fallback;
@@ -1716,6 +1793,7 @@
 
       async function loadProduct() {
         const productId = getProductIdFromQuery();
+        updateEditProductLink(productId);
         currentProductData = null;
         currentProductTitle = "";
         renderVintageProductsList(null);
@@ -1758,6 +1836,7 @@
 
           currentProductTitle = title;
           currentProductData = product;
+          updateEditProductLink(productId, title);
           renderVintageProductsList(product);
 
           const imageUrls = getProductImageUrls(product);
