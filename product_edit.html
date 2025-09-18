@@ -878,6 +878,8 @@
               "itemId",
               "listingId",
               "listing_id",
+              "VintageProductId",
+              "vintageProductId",
             ]);
 
             if (identifier && typeof identifier === "object") {
@@ -896,7 +898,14 @@
 
             const fallback =
               resolveField(source, ["path", "slug"]) ||
-              resolveField(source, ["url", "link", "productUrl", "href"]);
+              resolveField(source, [
+                "VintageProductUrl",
+                "vintageProductUrl",
+                "url",
+                "link",
+                "productUrl",
+                "href",
+              ]);
 
             if (fallback != null && fallback !== "") {
               const text = toDisplayString(fallback).trim();
@@ -926,7 +935,14 @@
 
           const titleCandidate =
             typeof product === "object" && product !== null
-              ? resolveField(product, ["title", "name", "productName", "label"])
+              ? resolveField(product, [
+                  "title",
+                  "name",
+                  "productName",
+                  "label",
+                  "VintageProductName",
+                  "vintageProductName",
+                ])
               : null;
           const title =
             titleCandidate && toDisplayString(titleCandidate).trim()
@@ -968,7 +984,14 @@
 
           const url =
             typeof product === "object" && product !== null
-              ? resolveField(product, ["url", "link", "productUrl", "href"], "")
+              ? resolveField(product, [
+                  "url",
+                  "link",
+                  "productUrl",
+                  "href",
+                  "VintageProductUrl",
+                  "vintageProductUrl",
+                ]) ?? ""
               : "";
 
           const photos =
@@ -1116,6 +1139,265 @@
             thumbnail: entry.thumbnail ?? existing?.thumbnail ?? "",
             raw: rawClone,
           };
+        };
+
+        const monittaProductsKeys = [
+          "monittaStoreProducts",
+          "monittaProducts",
+          "monittaStoreItems",
+          "monittaStore",
+          "monittaAssociatedProducts",
+        ];
+
+        const monittaIdentifierKeys = ["monittaStoreProductIds", "monittaProductIds", "monittaIds"];
+
+        const sanitizeMonittaEntryForPayload = (entry) => {
+          if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+            const clone = cloneProduct(entry);
+            const identifier = getMonittaIdentifier(clone);
+            if (
+              identifier &&
+              (!("id" in clone) || clone.id == null || String(clone.id).trim() === "")
+            ) {
+              clone.id = identifier;
+            }
+            return clone;
+          }
+
+          const identifier = getMonittaIdentifier(entry);
+          if (!identifier) {
+            return null;
+          }
+
+          return { id: identifier };
+        };
+
+        const sanitizeMonittaEntries = (entries) => {
+          if (!Array.isArray(entries)) {
+            return [];
+          }
+
+          return entries
+            .map((item) => sanitizeMonittaEntryForPayload(item))
+            .filter(
+              (item) =>
+                item && typeof item === "object" && !Array.isArray(item) && Object.keys(item).length > 0
+            );
+        };
+
+        const gatherMonittaIdentifiers = (items) => {
+          const identifiers = new Set();
+          toArray(items).forEach((item) => {
+            const identifier = getMonittaIdentifier(item);
+            if (typeof identifier !== "string") {
+              return;
+            }
+            const trimmed = identifier.trim();
+            if (trimmed) {
+              identifiers.add(trimmed);
+            }
+          });
+          return Array.from(identifiers);
+        };
+
+        const gatherNormalizedMonittaIdentifierSet = (items) => {
+          const normalized = new Set();
+          gatherMonittaIdentifiers(items).forEach((identifier) => {
+            normalized.add(identifier.toLowerCase());
+          });
+          return normalized;
+        };
+
+        const getVintageProductIdentifier = (source) => {
+          if (source == null) {
+            return "";
+          }
+
+          if (typeof source === "object" && !Array.isArray(source)) {
+            const identifier = resolveField(source, [
+              "VintageProductId",
+              "vintageProductId",
+              "id",
+              "Id",
+              "ID",
+              "productId",
+              "productID",
+            ]);
+            if (identifier != null && identifier !== "") {
+              const text = toDisplayString(identifier).trim();
+              if (text) {
+                return text;
+              }
+            }
+
+            const urlFallback = resolveField(source, [
+              "VintageProductUrl",
+              "vintageProductUrl",
+              "url",
+              "link",
+              "productUrl",
+              "href",
+            ]);
+            if (urlFallback != null && urlFallback !== "") {
+              const text = toDisplayString(urlFallback).trim();
+              if (text) {
+                return text;
+              }
+            }
+
+            const nameFallback = resolveField(source, [
+              "VintageProductName",
+              "vintageProductName",
+              "name",
+              "title",
+              "productName",
+              "label",
+            ]);
+            if (nameFallback != null && nameFallback !== "") {
+              const text = toDisplayString(nameFallback).trim();
+              if (text) {
+                return text;
+              }
+            }
+
+            return "";
+          }
+
+          return toDisplayString(source).trim();
+        };
+
+        const createVintageProductFromMonitta = (entry) => {
+          if (!entry || typeof entry !== "object") {
+            return null;
+          }
+
+          const identifier = getMonittaIdentifier(entry);
+          if (!identifier) {
+            return null;
+          }
+
+          const titleCandidate = resolveField(entry, [
+            "VintageProductName",
+            "vintageProductName",
+            "title",
+            "name",
+            "productName",
+            "label",
+          ]);
+          const titleText = titleCandidate ? toDisplayString(titleCandidate).trim() : "";
+          const urlCandidate = resolveField(entry, [
+            "VintageProductUrl",
+            "vintageProductUrl",
+            "url",
+            "link",
+            "productUrl",
+            "href",
+          ]);
+          const urlText = urlCandidate ? toDisplayString(urlCandidate).trim() : "";
+          const name = titleText || `Produkt Monitta ${identifier}`;
+
+          return {
+            VintageProductId: identifier,
+            vintageProductId: identifier,
+            VintageProductName: name,
+            vintageProductName: name,
+            VintageProductUrl: urlText,
+            vintageProductUrl: urlText,
+          };
+        };
+
+        const getExistingVintageProducts = (source) => {
+          if (!source || typeof source !== "object") {
+            return [];
+          }
+
+          const candidates = [source?.VintageProducts, source?.vintageProducts, source?.relatedProducts];
+          for (const candidate of candidates) {
+            const array = toArray(candidate);
+            if (array.length > 0) {
+              return array.map((item) => cloneProduct(item));
+            }
+          }
+
+          return [];
+        };
+
+        const assignVintageProductsToTarget = (target, entries) => {
+          if (!target || typeof target !== "object") {
+            return;
+          }
+
+          const upperCaseEntries = entries.map((entry) => cloneProduct(entry));
+          const lowerCaseEntries = upperCaseEntries.map((entry) => cloneProduct(entry));
+          target.VintageProducts = upperCaseEntries;
+          target.vintageProducts = lowerCaseEntries;
+        };
+
+        const mergeMonittaIntoVintageProducts = (target, monittaEntries, previousIds = new Set()) => {
+          if (!target || typeof target !== "object") {
+            return;
+          }
+
+          const sanitizedEntries = Array.isArray(monittaEntries) ? monittaEntries : [];
+          const previousIdValues = Array.isArray(previousIds)
+            ? previousIds
+            : previousIds instanceof Set
+            ? Array.from(previousIds)
+            : toArray(previousIds);
+          const normalizedPreviousIds = new Set();
+          previousIdValues.forEach((value) => {
+            const identifier =
+              typeof value === "string" ? value : getMonittaIdentifier(value);
+            if (typeof identifier === "string") {
+              const trimmed = identifier.trim();
+              if (trimmed) {
+                normalizedPreviousIds.add(trimmed.toLowerCase());
+              }
+            }
+          });
+
+          const currentNormalizedIds = gatherNormalizedMonittaIdentifierSet(sanitizedEntries);
+          const idsToReplace = new Set([...normalizedPreviousIds, ...currentNormalizedIds]);
+
+          const existingVintage = getExistingVintageProducts(target).filter((item) => {
+            const identifier = getVintageProductIdentifier(item);
+            if (!identifier) {
+              return true;
+            }
+            return !idsToReplace.has(identifier.toLowerCase());
+          });
+
+          const monittaVintageEntries = sanitizedEntries
+            .map((entry) => createVintageProductFromMonitta(entry))
+            .filter((entry) => entry && entry.VintageProductId);
+
+          const combined = [...existingVintage, ...monittaVintageEntries];
+          assignVintageProductsToTarget(target, combined);
+        };
+
+        const assignMonittaProductsToTarget = (target, products) => {
+          if (!target || typeof target !== "object") {
+            return;
+          }
+
+          const baseEntries = (Array.isArray(products) ? products : []).map((entry) =>
+            cloneProduct(entry)
+          );
+
+          monittaProductsKeys.forEach((key) => {
+            target[key] = baseEntries.map((entry) => cloneProduct(entry));
+          });
+        };
+
+        const assignMonittaIdentifiersToTarget = (target, identifiers) => {
+          if (!target || typeof target !== "object") {
+            return;
+          }
+
+          const baseIdentifiers = Array.isArray(identifiers) ? identifiers : [];
+          monittaIdentifierKeys.forEach((key) => {
+            target[key] = baseIdentifiers.map((identifier) => identifier);
+          });
         };
 
         const setMonittaStatus = (message, type = "info") => {
@@ -1369,17 +1651,27 @@
             return;
           }
 
-          const selectedPayload = getMonittaPayload();
-          currentProduct.monittaStoreProducts = selectedPayload;
+          const previousIdentifierValues = [];
+          [
+            currentProduct?.monittaStoreProducts,
+            currentProduct?.monittaStoreProductIds,
+            currentProduct?.monittaProducts,
+            currentProduct?.monittaProductIds,
+            currentProduct?.monittaStoreItems,
+            currentProduct?.monittaIds,
+          ].forEach((source) => {
+            previousIdentifierValues.push(...toArray(source));
+          });
 
-          const identifiers = Array.from(
-            new Set(
-              selectedPayload
-                .map((item) => getMonittaIdentifier(item))
-                .filter((id) => typeof id === "string" && id.trim() !== "")
-            )
-          );
-          currentProduct.monittaStoreProductIds = identifiers;
+          const previousIdentifiers = gatherNormalizedMonittaIdentifierSet(previousIdentifierValues);
+
+          const selectedPayload = getMonittaPayload();
+          const sanitizedSelected = sanitizeMonittaEntries(selectedPayload);
+          const identifiers = gatherMonittaIdentifiers(sanitizedSelected);
+
+          assignMonittaProductsToTarget(currentProduct, sanitizedSelected);
+          assignMonittaIdentifiersToTarget(currentProduct, identifiers);
+          mergeMonittaIntoVintageProducts(currentProduct, sanitizedSelected, previousIdentifiers);
         };
 
         const setMonittaSelectedFromProduct = (product) => {
@@ -1406,6 +1698,39 @@
               }
             });
           });
+
+          const includeVintageMonittaProducts = (source) => {
+            toArray(source).forEach((item) => {
+              if (!item || typeof item !== "object" || Array.isArray(item)) {
+                return;
+              }
+
+              const identifierCandidate = resolveField(
+                item,
+                ["VintageProductId", "vintageProductId"],
+                ""
+              );
+              if (!identifierCandidate || String(identifierCandidate).trim() === "") {
+                return;
+              }
+
+              const entry = createMonittaEntry(item);
+              if (!entry) {
+                return;
+              }
+
+              const selectedEntry = duplicateMonittaEntry(
+                entry,
+                monittaState.selectedMap.get(entry.id) ?? null
+              );
+              if (selectedEntry) {
+                monittaState.selectedMap.set(selectedEntry.id, selectedEntry);
+              }
+            });
+          };
+
+          includeVintageMonittaProducts(product?.VintageProducts);
+          includeVintageMonittaProducts(product?.vintageProducts);
 
           const idCandidates = toArray(
             product?.monittaStoreProductIds ?? product?.monittaProductIds ?? product?.monittaIds
@@ -1755,7 +2080,9 @@
             return;
           }
 
-          const vintageProducts = toArray(product?.vintageProducts ?? product?.relatedProducts);
+          const vintageProducts = toArray(
+            product?.VintageProducts ?? product?.vintageProducts ?? product?.relatedProducts
+          );
           vintageList.innerHTML = "";
 
           if (vintageProducts.length === 0) {
@@ -1771,9 +2098,26 @@
             listItem.className = "vintage-item";
 
             if (item && typeof item === "object") {
-              const title =
-                resolveField(item, ["name", "title", "productName", "label"], `Produkt ${index + 1}`);
-              const url = resolveField(item, ["url", "link", "productUrl", "href"]);
+              const title = resolveField(
+                item,
+                [
+                  "name",
+                  "title",
+                  "productName",
+                  "label",
+                  "VintageProductName",
+                  "vintageProductName",
+                ],
+                `Produkt ${index + 1}`
+              );
+              const url = resolveField(item, [
+                "url",
+                "link",
+                "productUrl",
+                "href",
+                "VintageProductUrl",
+                "vintageProductUrl",
+              ]);
               const price = resolveField(item, ["price", "amount", "value"]);
               const currency = resolveField(item, ["currency", "currencyCode", "priceCurrency"], "");
               const description = resolveField(item, ["description", "summary", "details"]);
@@ -1908,77 +2252,30 @@
           );
           ensureIdentifier(payload);
 
-          const sanitizeMonittaEntryForPayload = (entry) => {
-            if (entry && typeof entry === "object" && !Array.isArray(entry)) {
-              const clone = cloneProduct(entry);
-              const identifier = getMonittaIdentifier(clone);
-              if (
-                identifier &&
-                (!("id" in clone) || clone.id == null || String(clone.id).trim() === "")
-              ) {
-                clone.id = identifier;
-              }
-              return clone;
-            }
-
-            const identifier = getMonittaIdentifier(entry);
-            if (!identifier) {
-              return null;
-            }
-
-            return { id: identifier };
-          };
+          const previousIdentifierValues = [];
+          [
+            payload?.monittaStoreProducts,
+            payload?.monittaStoreProductIds,
+            payload?.monittaProducts,
+            payload?.monittaProductIds,
+            payload?.monittaStoreItems,
+            payload?.monittaIds,
+          ].forEach((source) => {
+            previousIdentifierValues.push(...toArray(source));
+          });
+          const previousIdentifiers = gatherNormalizedMonittaIdentifierSet(previousIdentifierValues);
 
           const monittaProductsSource = getMonittaPayload();
-          const sanitizedMonittaProducts = monittaProductsSource
-            .map((entry) => sanitizeMonittaEntryForPayload(entry))
-            .filter(
-              (entry) =>
-                entry && typeof entry === "object" && Object.keys(entry).length > 0 && !Array.isArray(entry)
-            );
+          const sanitizedMonittaProducts = sanitizeMonittaEntries(monittaProductsSource);
+          const monittaIdentifiers = gatherMonittaIdentifiers(sanitizedMonittaProducts);
 
-          const monittaIdentifiers = Array.from(
-            new Set(
-              sanitizedMonittaProducts
-                .map((entry) => {
-                  const identifier = getMonittaIdentifier(entry);
-                  return identifier != null ? String(identifier).trim() : "";
-                })
-                .filter((identifier) => identifier)
-            )
-          );
+          assignMonittaProductsToTarget(payload, sanitizedMonittaProducts);
+          assignMonittaIdentifiersToTarget(payload, monittaIdentifiers);
+          mergeMonittaIntoVintageProducts(payload, sanitizedMonittaProducts, previousIdentifiers);
 
-          const monittaProductsKeys = [
-            "monittaStoreProducts",
-            "monittaProducts",
-            "monittaStoreItems",
-            "monittaStore",
-            "monittaAssociatedProducts",
-          ];
-          const monittaIdentifierKeys = ["monittaStoreProductIds", "monittaProductIds", "monittaIds"];
-
-          const assignMonittaProductsToTarget = (target) => {
-            const baseArray = sanitizedMonittaProducts.map((entry) => cloneProduct(entry));
-            monittaProductsKeys.forEach((key, index) => {
-              if (index === 0) {
-                target[key] = baseArray;
-              } else {
-                target[key] = baseArray.map((entry) => cloneProduct(entry));
-              }
-            });
-          };
-
-          const assignMonittaIdentifiersToTarget = (target) => {
-            monittaIdentifierKeys.forEach((key) => {
-              target[key] = [...monittaIdentifiers];
-            });
-          };
-
-          assignMonittaProductsToTarget(payload);
-          assignMonittaIdentifiersToTarget(payload);
-
-          assignMonittaProductsToTarget(currentProduct);
-          assignMonittaIdentifiersToTarget(currentProduct);
+          assignMonittaProductsToTarget(currentProduct, sanitizedMonittaProducts);
+          assignMonittaIdentifiersToTarget(currentProduct, monittaIdentifiers);
+          mergeMonittaIntoVintageProducts(currentProduct, sanitizedMonittaProducts, previousIdentifiers);
 
           return payload;
         };
