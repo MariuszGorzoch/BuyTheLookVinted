@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monitta Store – Products</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+          sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f7fb;
+        color: #1f2933;
+        min-height: 100vh;
+      }
+
+      main {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: clamp(2.5rem, 6vw, 4.5rem) 0;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: clamp(2rem, 4vw, 3rem);
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(2rem, 5vw, 2.75rem);
+        color: #101827;
+      }
+
+      .intro {
+        margin: 0 auto;
+        max-width: 60ch;
+        color: #52606d;
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      #status {
+        margin: 0 auto clamp(1.75rem, 4vw, 2.5rem);
+        max-width: 60ch;
+        text-align: center;
+        color: #3d4852;
+        font-weight: 500;
+      }
+
+      #product-grid {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: clamp(1.25rem, 3vw, 1.85rem);
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .product-card {
+        background: #ffffff;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .product-card:hover,
+      .product-card:focus-within {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 38px rgba(15, 23, 42, 0.12);
+      }
+
+      .product-media {
+        position: relative;
+        padding-top: 62%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(14, 165, 233, 0.08));
+      }
+
+      .product-media img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .product-info {
+        padding: 1.4rem 1.6rem 1.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        flex: 1;
+      }
+
+      .product-title-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .product-name {
+        color: #1a56db;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        line-height: 1.35;
+      }
+
+      .product-name:hover,
+      .product-name:focus {
+        text-decoration: underline;
+      }
+
+      .product-price {
+        font-weight: 600;
+        color: #0e9f6e;
+        white-space: nowrap;
+      }
+
+      .product-description {
+        margin: 0;
+        color: #52606d;
+        line-height: 1.6;
+      }
+
+      .product-fallback {
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo,
+          Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.85rem;
+        background: rgba(15, 23, 42, 0.04);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        word-break: break-word;
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          width: min(100%, calc(100% - 1.5rem));
+        }
+
+        .product-info {
+          padding: 1.25rem 1.35rem 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Monitta Store Products</h1>
+        <p class="intro">
+          Browse the latest products fetched directly from the Monitta Store product API.
+        </p>
+      </header>
+
+      <p id="status" role="status" aria-live="polite">Loading products…</p>
+
+      <ul id="product-grid" hidden aria-label="Products"></ul>
+
+      <template id="product-card-template">
+        <li class="product-card">
+          <div class="product-media">
+            <img alt="Product image" loading="lazy" />
+          </div>
+          <div class="product-info">
+            <div class="product-title-row">
+              <a class="product-name" target="_blank" rel="noopener"></a>
+              <span class="product-price"></span>
+            </div>
+            <p class="product-description"></p>
+          </div>
+        </li>
+      </template>
+    </main>
+
+    <script>
+      const endpoint =
+        "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/monittastore/products";
+      const statusElement = document.getElementById("status");
+      const gridElement = document.getElementById("product-grid");
+      const template = document.getElementById("product-card-template");
+
+      function resolveField(product, keys, fallback = "") {
+        for (const key of keys) {
+          if (key in product && product[key] != null && product[key] !== "") {
+            return product[key];
+          }
+        }
+        return fallback;
+      }
+
+      function formatPrice(value, currency) {
+        if (value == null || value === "") {
+          return "";
+        }
+
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+
+        const numericValue = Number(value);
+        if (Number.isFinite(numericValue)) {
+          if (typeof currency === "string" && currency.trim()) {
+            try {
+              return new Intl.NumberFormat(undefined, {
+                style: "currency",
+                currency: currency.trim().toUpperCase(),
+              }).format(numericValue);
+            } catch (error) {
+              return `${numericValue.toFixed(2)} ${currency}`;
+            }
+          }
+
+          return numericValue.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          });
+        }
+
+        return "";
+      }
+
+      function getDescription(product) {
+        const summary = resolveField(product, [
+          "description",
+          "summary",
+          "details",
+          "text",
+          "subtitle",
+        ]);
+
+        if (summary) {
+          return summary;
+        }
+
+        try {
+          return JSON.stringify(product, null, 2);
+        } catch (error) {
+          return String(product);
+        }
+      }
+
+      async function loadProducts() {
+        statusElement.textContent = "Loading products…";
+        try {
+          const response = await fetch(endpoint);
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const products = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.products)
+            ? payload.products
+            : Array.isArray(payload?.items)
+            ? payload.items
+            : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+          if (!products.length) {
+            statusElement.textContent = "No products found.";
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          for (const product of products) {
+            const instance = template.content.cloneNode(true);
+            const card = instance.querySelector(".product-card");
+            const media = instance.querySelector(".product-media");
+            const image = instance.querySelector("img");
+            const nameLink = instance.querySelector(".product-name");
+            const priceElement = instance.querySelector(".product-price");
+            const descriptionElement = instance.querySelector(".product-description");
+
+            const title =
+              resolveField(product, ["name", "title", "productName", "label"], "Product");
+            const url = resolveField(product, ["url", "link", "productUrl", "href"]);
+            const imageUrl = resolveField(product, [
+              "imageUrl",
+              "image",
+              "thumbnailUrl",
+              "thumbnail",
+              "picture",
+              "photo",
+            ]);
+            const priceValue = resolveField(product, [
+              "priceFormatted",
+              "price",
+              "priceValue",
+              "amount",
+              "currentPrice",
+            ]);
+            const currency = resolveField(product, [
+              "currency",
+              "priceCurrency",
+              "currencyCode",
+              "currencySymbol",
+            ]);
+
+            nameLink.textContent = title;
+            if (url) {
+              nameLink.href = url;
+              nameLink.target = "_blank";
+              nameLink.rel = "noopener noreferrer";
+            } else {
+              nameLink.removeAttribute("href");
+              nameLink.removeAttribute("target");
+              nameLink.removeAttribute("rel");
+              nameLink.style.cursor = "default";
+            }
+
+            const formattedPrice = formatPrice(priceValue, currency);
+            if (formattedPrice) {
+              priceElement.textContent = formattedPrice;
+            } else {
+              priceElement.remove();
+            }
+
+            const description = getDescription(product);
+            const isJsonDescription =
+              typeof description === "string" && description.trim().startsWith("{");
+            if (isJsonDescription) {
+              descriptionElement.textContent = "";
+              descriptionElement.classList.add("product-fallback");
+              descriptionElement.textContent = description;
+            } else {
+              descriptionElement.classList.remove("product-fallback");
+              descriptionElement.textContent = description;
+            }
+
+            if (imageUrl) {
+              image.src = imageUrl;
+              image.alt = `${title} image`;
+            } else {
+              media.remove();
+              card.classList.add("product-card--no-image");
+            }
+
+            fragment.appendChild(instance);
+          }
+
+          gridElement.innerHTML = "";
+          gridElement.appendChild(fragment);
+          gridElement.hidden = false;
+          statusElement.textContent = `Loaded ${products.length} product${
+            products.length === 1 ? "" : "s"
+          }.`;
+        } catch (error) {
+          console.error(error);
+          statusElement.textContent =
+            "Unable to load products. Please check the API availability and try again.";
+        }
+      }
+
+      loadProducts();
+    </script>
+  </body>
+</html>
