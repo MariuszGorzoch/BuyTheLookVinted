@@ -245,7 +245,9 @@
           };
 
           try {
-            const response = await fetch("https://localhost:7193/products", {
+            const response = await fetch(
+              "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products",
+              {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
