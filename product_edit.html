@@ -291,7 +291,7 @@
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
 
         const params = new URLSearchParams(window.location.search);
-        const productId = params.get("id");
+        const productId = params.get("productID") ?? params.get("id");
 
         const setStatus = (message, type = "info") => {
           statusElement.textContent = message;
@@ -447,7 +447,10 @@
 
         const loadProduct = async () => {
           if (!productId) {
-            setStatus("Brak identyfikatora produktu w adresie URL.", "error");
+            setStatus(
+              "Brak identyfikatora produktu w adresie URL. Użyj parametru ?productID=…",
+              "error"
+            );
             return;
           }
 
