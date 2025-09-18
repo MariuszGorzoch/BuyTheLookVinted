@@ -175,9 +175,134 @@
         </div>
 
         <div class="actions">
-          <button type="button">Zapisz</button>
+          <button type="button" data-action="create">Utwórz</button>
+          <button type="button" data-action="save" hidden>Zapisz</button>
         </div>
       </form>
     </main>
+    <script>
+      (function () {
+        const form = document.querySelector("form");
+        const styleNameInput = document.getElementById("style-name");
+        const descriptionInput = document.getElementById("description");
+        const createButton = document.querySelector('[data-action="create"]');
+        const saveButton = document.querySelector('[data-action="save"]');
+        const statusElement = document.createElement("p");
+
+        statusElement.setAttribute("role", "status");
+        statusElement.style.marginTop = "1rem";
+        statusElement.style.color = "#111827";
+        form.appendChild(statusElement);
+
+        const state = {
+          createdProduct: null,
+          isCreating: false,
+        };
+
+        const showMessage = (message, type = "info") => {
+          const colors = {
+            info: "#111827",
+            success: "#047857",
+            error: "#b91c1c",
+          };
+
+          statusElement.textContent = message;
+          statusElement.style.color = colors[type] ?? colors.info;
+        };
+
+        const toggleButtons = (isCreated) => {
+          createButton.hidden = isCreated;
+          saveButton.hidden = !isCreated;
+        };
+
+        const persistProduct = (product) => {
+          try {
+            window.createdProduct = product;
+            localStorage.setItem("createdProduct", JSON.stringify(product));
+          } catch (error) {
+            console.warn("Nie udało się zapisać produktu w LocalStorage", error);
+          }
+        };
+
+        const createProduct = async () => {
+          if (state.isCreating) {
+            return;
+          }
+
+          if (!form.reportValidity()) {
+            return;
+          }
+
+          state.isCreating = true;
+          createButton.disabled = true;
+          showMessage("Tworzenie produktu...");
+
+          const payload = {
+            name: styleNameInput.value.trim(),
+            description: descriptionInput.value.trim(),
+            images: [],
+            vintageProducts: [],
+          };
+
+          try {
+            const response = await fetch("https://localhost:7193/products", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Żądanie nie powiodło się (status: ${response.status})`);
+            }
+
+            const productDetails = await response.json();
+            state.createdProduct = productDetails;
+            persistProduct(productDetails);
+            toggleButtons(true);
+            showMessage("Produkt został pomyślnie utworzony.", "success");
+          } catch (error) {
+            console.error("Błąd podczas tworzenia produktu:", error);
+            showMessage(
+              "Wystąpił problem podczas tworzenia produktu. Spróbuj ponownie.",
+              "error"
+            );
+          } finally {
+            state.isCreating = false;
+            createButton.disabled = false;
+          }
+        };
+
+        const handleSave = () => {
+          if (!state.createdProduct) {
+            showMessage("Brak produktu do zapisania.", "error");
+            return;
+          }
+
+          showMessage("Produkt gotowy do zapisania.", "success");
+        };
+
+        createButton.addEventListener("click", createProduct);
+        saveButton.addEventListener("click", handleSave);
+
+        const previouslyCreatedProduct = localStorage.getItem("createdProduct");
+        if (previouslyCreatedProduct) {
+          try {
+            const parsedProduct = JSON.parse(previouslyCreatedProduct);
+            if (parsedProduct?.name) {
+              state.createdProduct = parsedProduct;
+              styleNameInput.value = parsedProduct.name ?? "";
+              descriptionInput.value = parsedProduct.description ?? "";
+              toggleButtons(true);
+              showMessage("Załadowano zapisany produkt.", "info");
+            }
+          } catch (error) {
+            console.warn("Nie udało się odczytać produktu z LocalStorage", error);
+            localStorage.removeItem("createdProduct");
+          }
+        }
+      })();
+    </script>
   </body>
 </html>
