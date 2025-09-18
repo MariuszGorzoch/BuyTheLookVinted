@@ -110,6 +110,7 @@
       }
 
       input[type="text"],
+      input[type="search"],
       textarea {
         width: 100%;
         border-radius: 12px;
@@ -263,6 +264,225 @@
         font-style: italic;
       }
 
+      .monitta-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .monitta-search {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .monitta-search__label {
+        font-weight: 600;
+        color: #111827;
+        font-size: 0.95rem;
+      }
+
+      .monitta-count {
+        font-size: 0.9rem;
+        color: #4b5563;
+      }
+
+      .monitta-status {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        background: rgba(99, 102, 241, 0.08);
+        color: #312e81;
+        font-size: 0.95rem;
+      }
+
+      .monitta-status[data-status-type="error"] {
+        border-color: rgba(239, 68, 68, 0.35);
+        background: rgba(254, 226, 226, 0.82);
+        color: #991b1b;
+      }
+
+      .monitta-status[data-status-type="success"] {
+        border-color: rgba(16, 185, 129, 0.35);
+        background: rgba(209, 250, 229, 0.7);
+        color: #065f46;
+      }
+
+      .monitta-options {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .monitta-option {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 8px 18px rgba(99, 102, 241, 0.07);
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .monitta-option__label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        cursor: pointer;
+      }
+
+      .monitta-option__label input[type="checkbox"] {
+        margin-top: 0.2rem;
+      }
+
+      .monitta-option__content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .monitta-option__title {
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .monitta-option__meta {
+        font-size: 0.875rem;
+        color: #4b5563;
+      }
+
+      .monitta-option__description {
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+
+      .monitta-option__link {
+        align-self: flex-start;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #2563eb;
+        text-decoration: none;
+      }
+
+      .monitta-option__link:hover,
+      .monitta-option__link:focus {
+        text-decoration: underline;
+      }
+
+      .monitta-selected {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .monitta-selected-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .monitta-selected-item {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+      }
+
+      .monitta-selected-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 0;
+        flex: 1 1 220px;
+      }
+
+      .monitta-selected-title {
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .monitta-selected-meta {
+        font-size: 0.85rem;
+        color: #4b5563;
+      }
+
+      .monitta-selected-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .monitta-selected-link {
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.12);
+        color: #4338ca;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+
+      .monitta-selected-link:hover,
+      .monitta-selected-link:focus {
+        background: rgba(99, 102, 241, 0.18);
+        outline: none;
+      }
+
+      .monitta-remove {
+        border: none;
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      }
+
+      .monitta-remove:hover,
+      .monitta-remove:focus {
+        filter: brightness(1.05);
+        outline: none;
+        box-shadow: 0 10px 18px rgba(99, 102, 241, 0.2);
+      }
+
+      .monitta-remove:active {
+        transform: translateY(1px);
+      }
+
+      @media (min-width: 720px) {
+        .monitta-controls {
+          flex-direction: row;
+          align-items: flex-end;
+          justify-content: space-between;
+        }
+
+        .monitta-search {
+          flex: 1 1 auto;
+        }
+
+        .monitta-count {
+          text-align: right;
+        }
+
+        .monitta-selected-actions {
+          justify-content: flex-end;
+        }
+      }
+
       .vintage-list {
         list-style: none;
         margin: 0;
@@ -386,6 +606,40 @@
         </fieldset>
 
         <fieldset>
+          <legend>Produkty MonittaStore</legend>
+          <p class="hint">
+            Wybierz produkty Monitta Store, które chcesz powiązać z tą stylizacją.
+          </p>
+          <div class="monitta-controls">
+            <label class="monitta-search" for="monitta-store-search">
+              <span class="monitta-search__label">Wyszukaj produkt</span>
+              <input
+                type="search"
+                id="monitta-store-search"
+                name="monitta-store-search"
+                placeholder="Filtruj po nazwie, identyfikatorze lub rozmiarze"
+                autocomplete="off"
+              />
+            </label>
+            <span class="monitta-count" id="monitta-store-count" aria-live="polite">Wybrano: 0</span>
+          </div>
+          <p class="monitta-status" id="monitta-store-status" role="status">
+            Trwa przygotowywanie listy produktów Monitta Store…
+          </p>
+          <ul
+            id="monitta-store-list"
+            class="monitta-options"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <li class="placeholder">Lista produktów jest wczytywana…</li>
+          </ul>
+          <div class="monitta-selected" id="monitta-store-selected">
+            <p class="placeholder">Nie wybrano produktów Monitta Store.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend>Surowe dane z interfejsu API</legend>
           <pre id="raw-json">Ładowanie…</pre>
         </fieldset>
@@ -406,6 +660,11 @@
         const newImagesInput = document.getElementById("new-images");
         const newImagesPreview = document.getElementById("new-images-preview");
         const vintageList = document.getElementById("vintage-products");
+        const monittaStatusElement = document.getElementById("monitta-store-status");
+        const monittaListElement = document.getElementById("monitta-store-list");
+        const monittaSelectedElement = document.getElementById("monitta-store-selected");
+        const monittaSearchInput = document.getElementById("monitta-store-search");
+        const monittaCountElement = document.getElementById("monitta-store-count");
         const rawJson = document.getElementById("raw-json");
         const saveButton = document.getElementById("save-button");
 
@@ -413,6 +672,17 @@
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
         const uploadBaseUrl =
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/upload";
+        const monittaEndpoint =
+          "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/MonittaStore";
+
+        const monittaState = {
+          isLoading: true,
+          filter: "",
+          allProducts: [],
+          allProductsMap: new Map(),
+          selectedMap: new Map(),
+          error: null,
+        };
 
         const params = new URLSearchParams(window.location.search);
         const productId = params.get("productID") ?? params.get("id");
@@ -481,6 +751,15 @@
             if (Array.isArray(value.data)) {
               return value.data;
             }
+            if (Array.isArray(value.products)) {
+              return value.products;
+            }
+            if (Array.isArray(value.results)) {
+              return value.results;
+            }
+            if (Array.isArray(value.entries)) {
+              return value.entries;
+            }
           }
 
           return [];
@@ -518,6 +797,216 @@
           }
 
           return String(value);
+        };
+
+        const formatMonittaPrice = (product) => {
+          if (!product || typeof product !== "object") {
+            return "";
+          }
+
+          const priceSources = [
+            product.price,
+            product.total_item_price,
+            product.totalItemPrice,
+            product.total_price,
+            product.totalPrice,
+          ];
+
+          for (const source of priceSources) {
+            if (!source || typeof source !== "object") {
+              continue;
+            }
+
+            const amountValue = resolveField(source, ["amount", "value"]);
+            if (amountValue == null || amountValue === "") {
+              continue;
+            }
+
+            const amountText = toDisplayString(amountValue).trim();
+            if (!amountText) {
+              continue;
+            }
+
+            const currencyValue =
+              resolveField(source, ["currency_code", "currency", "currencyCode"]) ||
+              resolveField(product, ["currency", "currency_code", "currencyCode", "priceCurrency"]);
+
+            if (currencyValue != null && currencyValue !== "") {
+              const currencyText = toDisplayString(currencyValue).trim();
+              return currencyText ? `${amountText} ${currencyText}` : amountText;
+            }
+
+            return amountText;
+          }
+
+          const directAmount =
+            product.price ?? product.amount ?? product.value ?? product.price_amount ?? product.priceValue;
+
+          if (typeof directAmount === "number" || typeof directAmount === "string") {
+            const amountText = toDisplayString(directAmount).trim();
+            if (amountText) {
+              const currencyValue = resolveField(product, [
+                "currency",
+                "currency_code",
+                "currencyCode",
+                "priceCurrency",
+              ]);
+              if (currencyValue != null && currencyValue !== "") {
+                const currencyText = toDisplayString(currencyValue).trim();
+                return currencyText ? `${amountText} ${currencyText}` : amountText;
+              }
+              return amountText;
+            }
+          }
+
+          return "";
+        };
+
+        const getMonittaIdentifier = (source) => {
+          if (source == null) {
+            return "";
+          }
+
+          if (typeof source === "object" && !Array.isArray(source)) {
+            let identifier = resolveField(source, [
+              "id",
+              "Id",
+              "ID",
+              "productId",
+              "productID",
+              "item_id",
+              "itemId",
+              "listingId",
+              "listing_id",
+            ]);
+
+            if (identifier && typeof identifier === "object") {
+              const nested = resolveField(identifier, ["id", "value"]);
+              if (nested != null && nested !== "") {
+                identifier = nested;
+              }
+            }
+
+            if (identifier != null && identifier !== "") {
+              const text = toDisplayString(identifier).trim();
+              if (text) {
+                return text;
+              }
+            }
+
+            const fallback =
+              resolveField(source, ["path", "slug"]) ||
+              resolveField(source, ["url", "link", "productUrl", "href"]);
+
+            if (fallback != null && fallback !== "") {
+              const text = toDisplayString(fallback).trim();
+              if (text) {
+                return text;
+              }
+            }
+
+            return "";
+          }
+
+          return toDisplayString(source).trim();
+        };
+
+        const createMonittaEntry = (product) => {
+          if (product == null) {
+            return null;
+          }
+
+          const identifier = getMonittaIdentifier(product);
+          if (!identifier) {
+            return null;
+          }
+
+          const raw =
+            typeof product === "object" && product !== null ? product : { id: identifier };
+
+          const titleCandidate =
+            typeof product === "object" && product !== null
+              ? resolveField(product, ["title", "name", "productName", "label"])
+              : null;
+          const title =
+            titleCandidate && toDisplayString(titleCandidate).trim()
+              ? toDisplayString(titleCandidate).trim()
+              : `Produkt Monitta ${identifier}`;
+
+          const priceText =
+            typeof product === "object" && product !== null ? formatMonittaPrice(product) : "";
+
+          const descriptionCandidate =
+            typeof product === "object" && product !== null
+              ? resolveField(product, ["description", "summary", "details"])
+              : "";
+          const description =
+            descriptionCandidate && toDisplayString(descriptionCandidate).trim()
+              ? toDisplayString(descriptionCandidate).trim()
+              : "";
+
+          const size =
+            typeof product === "object" && product !== null ? resolveField(product, ["size"]) : "";
+          const statusValue =
+            typeof product === "object" && product !== null
+              ? resolveField(product, ["status", "condition"])
+              : "";
+          const infoParts = [];
+          if (size) {
+            const sizeText = toDisplayString(size).trim();
+            if (sizeText) {
+              infoParts.push(sizeText);
+            }
+          }
+          if (statusValue) {
+            const statusText = toDisplayString(statusValue).trim();
+            if (statusText) {
+              infoParts.push(statusText);
+            }
+          }
+          const info = infoParts.join(" · ");
+
+          const url =
+            typeof product === "object" && product !== null
+              ? resolveField(product, ["url", "link", "productUrl", "href"], "")
+              : "";
+
+          const photos =
+            typeof product === "object" && product !== null
+              ? toArray(product?.photos ?? product?.images ?? product?.image)
+              : [];
+          let thumbnail = "";
+          if (photos.length > 0) {
+            const firstPhoto = photos[0];
+            if (typeof firstPhoto === "string") {
+              thumbnail = firstPhoto;
+            } else if (firstPhoto && typeof firstPhoto === "object") {
+              thumbnail =
+                resolveField(firstPhoto, [
+                  "thumbnail_url",
+                  "thumbnailUrl",
+                  "url",
+                  "imageUrl",
+                  "src",
+                  "href",
+                  "small",
+                ]) || resolveField(firstPhoto, ["full_size_url", "fullSizeUrl"]);
+            }
+          }
+          if (!thumbnail && typeof product === "object" && product !== null) {
+            thumbnail = resolveField(product, ["image", "imageUrl", "thumbnail", "thumbnailUrl"]);
+          }
+
+          return {
+            id: identifier,
+            title,
+            priceText: priceText ? toDisplayString(priceText).trim() : "",
+            description,
+            info,
+            url: url ? toDisplayString(url).trim() : "",
+            thumbnail: thumbnail ? toDisplayString(thumbnail).trim() : "",
+            raw,
+          };
         };
 
         const cloneProduct = (product) => {
@@ -591,6 +1080,419 @@
           }
 
           return target;
+        };
+
+        const duplicateMonittaEntry = (entry, existing = null) => {
+          if (!entry || typeof entry !== "object") {
+            return null;
+          }
+
+          const identifier = entry.id ?? existing?.id;
+          if (!identifier) {
+            return null;
+          }
+
+          const baseRaw =
+            entry.raw && typeof entry.raw === "object"
+              ? entry.raw
+              : existing && existing.raw && typeof existing.raw === "object"
+              ? existing.raw
+              : { id: identifier };
+
+          let rawClone = cloneProduct(baseRaw);
+          if (!rawClone || typeof rawClone !== "object" || Object.keys(rawClone).length === 0) {
+            rawClone = { id: identifier };
+          } else if (!("id" in rawClone) && identifier) {
+            rawClone.id = identifier;
+          }
+
+          return {
+            id: identifier,
+            title: entry.title ?? existing?.title ?? `Produkt Monitta ${identifier}`,
+            priceText: entry.priceText ?? existing?.priceText ?? "",
+            description: entry.description ?? existing?.description ?? "",
+            info: entry.info ?? existing?.info ?? "",
+            url: entry.url ?? existing?.url ?? "",
+            thumbnail: entry.thumbnail ?? existing?.thumbnail ?? "",
+            raw: rawClone,
+          };
+        };
+
+        const setMonittaStatus = (message, type = "info") => {
+          if (!monittaStatusElement) {
+            return;
+          }
+
+          if (!message) {
+            monittaStatusElement.textContent = "";
+            monittaStatusElement.hidden = true;
+            monittaStatusElement.removeAttribute("data-status-type");
+            return;
+          }
+
+          monittaStatusElement.hidden = false;
+          monittaStatusElement.textContent = message;
+
+          if (type === "info") {
+            monittaStatusElement.removeAttribute("data-status-type");
+          } else {
+            monittaStatusElement.dataset.statusType = type;
+          }
+        };
+
+        const updateMonittaCount = () => {
+          if (!monittaCountElement) {
+            return;
+          }
+
+          const count = monittaState.selectedMap.size;
+          monittaCountElement.textContent = `Wybrano: ${count}`;
+        };
+
+        const createMonittaPlaceholder = (message) => {
+          const item = document.createElement("li");
+          item.className = "placeholder";
+          item.textContent = message;
+          return item;
+        };
+
+        const getFilteredMonittaProducts = () => {
+          const term = monittaState.filter.trim().toLowerCase();
+          if (!term) {
+            return monittaState.allProducts;
+          }
+
+          return monittaState.allProducts.filter((entry) => {
+            const haystack = [entry.title, entry.priceText, entry.info, entry.description, entry.id]
+              .filter((value) => typeof value === "string" && value)
+              .join(" ")
+              .toLowerCase();
+            return haystack.includes(term);
+          });
+        };
+
+        const renderMonittaList = () => {
+          if (!monittaListElement) {
+            return;
+          }
+
+          monittaListElement.innerHTML = "";
+          monittaListElement.setAttribute("aria-busy", monittaState.isLoading ? "true" : "false");
+
+          if (monittaState.isLoading) {
+            monittaListElement.appendChild(
+              createMonittaPlaceholder("Lista produktów jest wczytywana…")
+            );
+            return;
+          }
+
+          if (monittaState.error && monittaState.allProducts.length === 0) {
+            monittaListElement.appendChild(createMonittaPlaceholder(monittaState.error));
+            return;
+          }
+
+          const products = getFilteredMonittaProducts();
+
+          if (products.length === 0) {
+            const message = monittaState.filter
+              ? "Brak produktów spełniających kryteria wyszukiwania."
+              : "Brak produktów Monitta Store do wyświetlenia.";
+            monittaListElement.appendChild(createMonittaPlaceholder(message));
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          products.forEach((entry) => {
+            const listItem = document.createElement("li");
+            listItem.className = "monitta-option";
+            listItem.dataset.monittaId = entry.id;
+
+            const label = document.createElement("label");
+            label.className = "monitta-option__label";
+
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.value = entry.id;
+            checkbox.dataset.monittaId = entry.id;
+            checkbox.checked = monittaState.selectedMap.has(entry.id);
+
+            const content = document.createElement("div");
+            content.className = "monitta-option__content";
+
+            const title = document.createElement("span");
+            title.className = "monitta-option__title";
+            title.textContent = entry.title;
+            content.appendChild(title);
+
+            if (entry.priceText || entry.info) {
+              const meta = document.createElement("span");
+              meta.className = "monitta-option__meta";
+              if (entry.priceText && entry.info) {
+                meta.textContent = `${entry.priceText} · ${entry.info}`;
+              } else {
+                meta.textContent = entry.priceText || entry.info;
+              }
+              content.appendChild(meta);
+            }
+
+            if (entry.description) {
+              const description = document.createElement("span");
+              description.className = "monitta-option__description";
+              description.textContent = entry.description;
+              content.appendChild(description);
+            }
+
+            label.appendChild(checkbox);
+            label.appendChild(content);
+            listItem.appendChild(label);
+
+            if (entry.url) {
+              const link = document.createElement("a");
+              link.href = entry.url;
+              link.target = "_blank";
+              link.rel = "noopener";
+              link.className = "monitta-option__link";
+              link.textContent = "Zobacz na Monitta Store";
+              listItem.appendChild(link);
+            }
+
+            fragment.appendChild(listItem);
+          });
+
+          monittaListElement.appendChild(fragment);
+        };
+
+        const renderMonittaSelected = () => {
+          if (!monittaSelectedElement) {
+            return;
+          }
+
+          monittaSelectedElement.innerHTML = "";
+          const selected = Array.from(monittaState.selectedMap.values());
+          if (selected.length === 0) {
+            const placeholder = document.createElement("p");
+            placeholder.className = "placeholder";
+            placeholder.textContent = "Nie wybrano produktów Monitta Store.";
+            monittaSelectedElement.appendChild(placeholder);
+            return;
+          }
+
+          selected.sort((a, b) => a.title.localeCompare(b.title, "pl", { sensitivity: "base" }));
+
+          const list = document.createElement("ul");
+          list.className = "monitta-selected-list";
+
+          selected.forEach((entry) => {
+            const item = document.createElement("li");
+            item.className = "monitta-selected-item";
+            item.dataset.monittaId = entry.id;
+
+            const content = document.createElement("div");
+            content.className = "monitta-selected-content";
+
+            const title = document.createElement("span");
+            title.className = "monitta-selected-title";
+            title.textContent = entry.title;
+            content.appendChild(title);
+
+            const metaPieces = [];
+            if (entry.priceText) {
+              metaPieces.push(entry.priceText);
+            }
+            if (entry.info) {
+              metaPieces.push(entry.info);
+            }
+
+            if (metaPieces.length > 0) {
+              const meta = document.createElement("span");
+              meta.className = "monitta-selected-meta";
+              meta.textContent = metaPieces.join(" · ");
+              content.appendChild(meta);
+            } else if (entry.description) {
+              const meta = document.createElement("span");
+              meta.className = "monitta-selected-meta";
+              meta.textContent = entry.description;
+              content.appendChild(meta);
+            }
+
+            const actions = document.createElement("div");
+            actions.className = "monitta-selected-actions";
+
+            if (entry.url) {
+              const link = document.createElement("a");
+              link.href = entry.url;
+              link.target = "_blank";
+              link.rel = "noopener";
+              link.className = "monitta-selected-link";
+              link.textContent = "Zobacz";
+              actions.appendChild(link);
+            }
+
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "monitta-remove";
+            removeButton.dataset.monittaRemove = entry.id;
+            removeButton.textContent = "Usuń";
+            actions.appendChild(removeButton);
+
+            item.appendChild(content);
+            item.appendChild(actions);
+            list.appendChild(item);
+          });
+
+          monittaSelectedElement.appendChild(list);
+        };
+
+        const getMonittaPayload = () => {
+          const payload = [];
+          monittaState.selectedMap.forEach((entry) => {
+            if (!entry) {
+              return;
+            }
+
+            const base =
+              entry.raw && typeof entry.raw === "object" ? entry.raw : { id: entry.id };
+            let clone = cloneProduct(base);
+            if (!clone || typeof clone !== "object" || Object.keys(clone).length === 0) {
+              clone = { id: entry.id };
+            } else if (entry.id && !("id" in clone)) {
+              clone.id = entry.id;
+            }
+            payload.push(clone);
+          });
+          return payload;
+        };
+
+        const updateMonittaSelectionInProduct = () => {
+          if (!currentProduct || typeof currentProduct !== "object") {
+            return;
+          }
+
+          const selectedPayload = getMonittaPayload();
+          currentProduct.monittaStoreProducts = selectedPayload;
+
+          const identifiers = Array.from(
+            new Set(
+              selectedPayload
+                .map((item) => getMonittaIdentifier(item))
+                .filter((id) => typeof id === "string" && id.trim() !== "")
+            )
+          );
+          currentProduct.monittaStoreProductIds = identifiers;
+        };
+
+        const setMonittaSelectedFromProduct = (product) => {
+          monittaState.selectedMap.clear();
+
+          const candidateKeys = [
+            "monittaStoreProducts",
+            "monittaProducts",
+            "monittaStoreItems",
+            "monittaStore",
+            "monittaAssociatedProducts",
+          ];
+
+          candidateKeys.forEach((key) => {
+            const items = toArray(product?.[key]);
+            items.forEach((item) => {
+              const entry = createMonittaEntry(item);
+              if (!entry) {
+                return;
+              }
+              const selectedEntry = duplicateMonittaEntry(entry);
+              if (selectedEntry) {
+                monittaState.selectedMap.set(selectedEntry.id, selectedEntry);
+              }
+            });
+          });
+
+          const idCandidates = toArray(
+            product?.monittaStoreProductIds ?? product?.monittaProductIds ?? product?.monittaIds
+          );
+          idCandidates.forEach((candidate) => {
+            const entry =
+              typeof candidate === "object" && candidate !== null
+                ? createMonittaEntry(candidate)
+                : createMonittaEntry({ id: candidate });
+            if (!entry) {
+              return;
+            }
+            const existing = monittaState.selectedMap.get(entry.id);
+            const selectedEntry = duplicateMonittaEntry(entry, existing ?? null);
+            if (selectedEntry) {
+              monittaState.selectedMap.set(selectedEntry.id, selectedEntry);
+            }
+          });
+
+          renderMonittaSelected();
+          updateMonittaSelectionInProduct();
+          updateMonittaCount();
+          renderMonittaList();
+        };
+
+        const loadMonittaProducts = async () => {
+          if (!monittaListElement) {
+            return;
+          }
+
+          monittaState.isLoading = true;
+          monittaState.error = null;
+          monittaListElement.setAttribute("aria-busy", "true");
+          setMonittaStatus("Trwa wczytywanie produktów Monitta Store…");
+
+          try {
+            const response = await fetch(monittaEndpoint);
+            if (!response.ok) {
+              throw new Error(`Żądanie nie powiodło się. Kod odpowiedzi: ${response.status}`);
+            }
+
+            const payload = await response.json();
+            const rawProducts = toArray(payload);
+            const uniqueEntries = new Map();
+            rawProducts.forEach((item) => {
+              const entry = createMonittaEntry(item);
+              if (!entry || uniqueEntries.has(entry.id)) {
+                return;
+              }
+              uniqueEntries.set(entry.id, entry);
+            });
+
+            const entries = Array.from(uniqueEntries.values());
+            entries.sort((a, b) => a.title.localeCompare(b.title, "pl", { sensitivity: "base" }));
+
+            monittaState.allProducts = entries;
+            monittaState.allProductsMap = uniqueEntries;
+            monittaState.error = null;
+
+            monittaState.selectedMap.forEach((existingEntry, id) => {
+              const datasetEntry = uniqueEntries.get(id);
+              if (!datasetEntry) {
+                return;
+              }
+              const mergedEntry = duplicateMonittaEntry(datasetEntry, existingEntry);
+              if (mergedEntry) {
+                monittaState.selectedMap.set(id, mergedEntry);
+              }
+            });
+
+            if (entries.length === 0) {
+              setMonittaStatus("Brak produktów Monitta Store do wyświetlenia.");
+            } else {
+              setMonittaStatus(`Wczytano ${entries.length} produktów Monitta Store.`);
+            }
+          } catch (error) {
+            console.error("Błąd podczas wczytywania produktów Monitta Store:", error);
+            monittaState.error = "Nie udało się pobrać listy produktów Monitta Store.";
+            setMonittaStatus(monittaState.error, "error");
+          } finally {
+            monittaState.isLoading = false;
+            monittaListElement.setAttribute("aria-busy", "false");
+            renderMonittaList();
+            renderMonittaSelected();
+            updateMonittaSelectionInProduct();
+            updateMonittaCount();
+          }
         };
 
         const isImageFile = (file) => {
@@ -756,6 +1658,98 @@
           });
         }
 
+        if (monittaSearchInput) {
+          monittaSearchInput.addEventListener("input", () => {
+            monittaState.filter = monittaSearchInput.value ?? "";
+            renderMonittaList();
+          });
+        }
+
+        if (monittaListElement) {
+          monittaListElement.addEventListener("change", (event) => {
+            const target = event.target;
+            if (!target || !(target instanceof HTMLInputElement)) {
+              return;
+            }
+            if (!target.matches('input[type="checkbox"][data-monitta-id]')) {
+              return;
+            }
+
+            const identifier = target.dataset.monittaId;
+            if (!identifier) {
+              return;
+            }
+
+            if (target.checked) {
+              const datasetEntry = monittaState.allProductsMap.get(identifier);
+              if (datasetEntry) {
+                const entry = duplicateMonittaEntry(
+                  datasetEntry,
+                  monittaState.selectedMap.get(identifier) ?? null
+                );
+                if (entry) {
+                  monittaState.selectedMap.set(identifier, entry);
+                }
+              } else {
+                const fallbackEntry = createMonittaEntry({ id: identifier });
+                if (fallbackEntry) {
+                  const entry = duplicateMonittaEntry(
+                    fallbackEntry,
+                    monittaState.selectedMap.get(identifier) ?? null
+                  );
+                  if (entry) {
+                    monittaState.selectedMap.set(identifier, entry);
+                  }
+                }
+              }
+            } else {
+              monittaState.selectedMap.delete(identifier);
+            }
+
+            renderMonittaSelected();
+            updateMonittaSelectionInProduct();
+            updateMonittaCount();
+          });
+        }
+
+        if (monittaSelectedElement) {
+          monittaSelectedElement.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!target || !(target instanceof HTMLElement)) {
+              return;
+            }
+
+            if (!target.matches("button[data-monitta-remove]")) {
+              return;
+            }
+
+            const identifier = target.dataset.monittaRemove;
+            if (!identifier) {
+              return;
+            }
+
+            monittaState.selectedMap.delete(identifier);
+
+            if (monittaListElement) {
+              const checkboxes = monittaListElement.querySelectorAll(
+                'input[type="checkbox"][data-monitta-id]'
+              );
+              checkboxes.forEach((checkbox) => {
+                if (
+                  checkbox instanceof HTMLInputElement &&
+                  checkbox.dataset.monittaId === identifier
+                ) {
+                  checkbox.checked = false;
+                }
+              });
+            }
+
+            renderMonittaSelected();
+            updateMonittaSelectionInProduct();
+            updateMonittaCount();
+          });
+        }
+
         const renderVintageProducts = (product) => {
           if (!vintageList) {
             return;
@@ -845,6 +1839,7 @@
 
           renderImages(safeProduct);
           renderVintageProducts(safeProduct);
+          setMonittaSelectedFromProduct(safeProduct);
 
           if (rawJson) {
             const hasContent = hasProductData(safeProduct);
@@ -912,6 +1907,78 @@
             sanitizedDescription
           );
           ensureIdentifier(payload);
+
+          const sanitizeMonittaEntryForPayload = (entry) => {
+            if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+              const clone = cloneProduct(entry);
+              const identifier = getMonittaIdentifier(clone);
+              if (
+                identifier &&
+                (!("id" in clone) || clone.id == null || String(clone.id).trim() === "")
+              ) {
+                clone.id = identifier;
+              }
+              return clone;
+            }
+
+            const identifier = getMonittaIdentifier(entry);
+            if (!identifier) {
+              return null;
+            }
+
+            return { id: identifier };
+          };
+
+          const monittaProductsSource = getMonittaPayload();
+          const sanitizedMonittaProducts = monittaProductsSource
+            .map((entry) => sanitizeMonittaEntryForPayload(entry))
+            .filter(
+              (entry) =>
+                entry && typeof entry === "object" && Object.keys(entry).length > 0 && !Array.isArray(entry)
+            );
+
+          const monittaIdentifiers = Array.from(
+            new Set(
+              sanitizedMonittaProducts
+                .map((entry) => {
+                  const identifier = getMonittaIdentifier(entry);
+                  return identifier != null ? String(identifier).trim() : "";
+                })
+                .filter((identifier) => identifier)
+            )
+          );
+
+          const monittaProductsKeys = [
+            "monittaStoreProducts",
+            "monittaProducts",
+            "monittaStoreItems",
+            "monittaStore",
+            "monittaAssociatedProducts",
+          ];
+          const monittaIdentifierKeys = ["monittaStoreProductIds", "monittaProductIds", "monittaIds"];
+
+          const assignMonittaProductsToTarget = (target) => {
+            const baseArray = sanitizedMonittaProducts.map((entry) => cloneProduct(entry));
+            monittaProductsKeys.forEach((key, index) => {
+              if (index === 0) {
+                target[key] = baseArray;
+              } else {
+                target[key] = baseArray.map((entry) => cloneProduct(entry));
+              }
+            });
+          };
+
+          const assignMonittaIdentifiersToTarget = (target) => {
+            monittaIdentifierKeys.forEach((key) => {
+              target[key] = [...monittaIdentifiers];
+            });
+          };
+
+          assignMonittaProductsToTarget(payload);
+          assignMonittaIdentifiersToTarget(payload);
+
+          assignMonittaProductsToTarget(currentProduct);
+          assignMonittaIdentifiersToTarget(currentProduct);
 
           return payload;
         };
@@ -1076,6 +2143,7 @@
 
             renderImages({});
             renderVintageProducts({});
+            setMonittaSelectedFromProduct({});
             if (rawJson) {
               rawJson.textContent = "Brak danych";
             }
@@ -1105,6 +2173,7 @@
             }
             renderImages({});
             renderVintageProducts({});
+            setMonittaSelectedFromProduct({});
             if (newImagesInput) {
               newImagesInput.value = "";
             }
@@ -1122,6 +2191,11 @@
         if (saveButton) {
           saveButton.addEventListener("click", saveProduct);
         }
+
+        renderMonittaList();
+        renderMonittaSelected();
+        updateMonittaCount();
+        loadMonittaProducts();
 
         loadProduct();
       })();
