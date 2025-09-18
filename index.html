@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vinted Wardrobe Items</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 2rem;
+        background-color: #f5f5f5;
+        color: #202124;
+      }
+
+      h1 {
+        margin-bottom: 0.5rem;
+        color: #1f1f1f;
+      }
+
+      p.description {
+        margin-bottom: 1.5rem;
+        color: #555;
+        max-width: 60ch;
+      }
+
+      #status-message {
+        margin-bottom: 1.25rem;
+        color: #5f6368;
+      }
+
+      ul {
+        list-style: disc;
+        list-style-position: outside;
+        padding-left: 1.5rem;
+        margin: 0;
+        display: grid;
+        gap: 1rem;
+      }
+
+      li {
+        display: list-item;
+      }
+
+      .item-body {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .item-thumbnail {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+        background-color: #fff;
+        flex-shrink: 0;
+      }
+
+      .item-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        max-width: 65ch;
+      }
+
+      .item-link {
+        font-weight: 600;
+        color: #1a73e8;
+        text-decoration: none;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .item-link:hover,
+      .item-link:focus {
+        text-decoration: underline;
+      }
+
+      .item-meta {
+        margin: 0;
+        color: #5f6368;
+        font-size: 0.9rem;
+      }
+
+      .item-price {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #333;
+      }
+
+      .item-price strong {
+        font-weight: 600;
+      }
+
+      .item-price span {
+        color: #5f6368;
+        margin-left: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Szafa użytkowniczki Vinted</h1>
+    <p class="description">
+      Lista prezentuje produkty z publicznej szafy Vinted użytkowniczki
+      wachum. Każdy wpis ma formę punktu z linkiem do ogłoszenia oraz miniaturą
+      zdjęcia produktu.
+    </p>
+    <p id="status-message" role="status">Przygotowywanie sesji Vinted…</p>
+    <ul id="items-list" aria-live="polite"></ul>
+
+    <script>
+      const MEMBER_URL = "https://www.vinted.pl/member/146342127";
+      const WARDROBE_URL =
+        "https://www.vinted.pl/api/v2/wardrobe/146342127/items";
+      const PROXY_PREFIX = "https://cors.isomorphic-git.org/";
+
+      const listElement = document.getElementById("items-list");
+      const statusElement = document.getElementById("status-message");
+
+      function updateStatus(message) {
+        if (message) {
+          statusElement.textContent = message;
+          statusElement.style.display = "block";
+        } else {
+          statusElement.textContent = "";
+          statusElement.style.display = "none";
+        }
+      }
+
+      function shouldAttemptProxy(status) {
+        return status === 0 || status === 401 || status === 403 || status === 503;
+      }
+
+      async function fetchWithProxyFallback(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        if (!headers.has("accept")) {
+          headers.set("accept", "*/*");
+        }
+
+        const directOptions = {
+          ...options,
+          mode: "cors",
+          credentials: "include",
+          headers,
+        };
+
+        let directError;
+
+        try {
+          const directResponse = await fetch(url, directOptions);
+          const isOpaque =
+            directResponse.type === "opaque" ||
+            directResponse.type === "opaqueredirect";
+
+          if (
+            !isOpaque &&
+            (directResponse.ok || !shouldAttemptProxy(directResponse.status))
+          ) {
+            return { response: directResponse, usedProxy: false };
+          }
+        } catch (error) {
+          directError = error;
+        }
+
+        const proxyUrl = `${PROXY_PREFIX}${url}`;
+        const proxyHeaders = new Headers(headers);
+        proxyHeaders.set("x-requested-with", "XMLHttpRequest");
+
+        const proxyOptions = {
+          ...options,
+          mode: "cors",
+          credentials: "omit",
+          headers: proxyHeaders,
+        };
+
+        try {
+          const proxiedResponse = await fetch(proxyUrl, proxyOptions);
+          return { response: proxiedResponse, usedProxy: true };
+        } catch (proxyError) {
+          if (directError) {
+            throw directError;
+          }
+          throw proxyError;
+        }
+      }
+
+      async function safeReadText(response) {
+        try {
+          return await response.text();
+        } catch (error) {
+          console.warn("Unable to read response body", error);
+          return "";
+        }
+      }
+
+      function normaliseWardrobeItems(payload) {
+        if (!payload) {
+          return [];
+        }
+
+        if (Array.isArray(payload.items)) {
+          return payload.items;
+        }
+
+        if (Array.isArray(payload.data?.items)) {
+          return payload.data.items;
+        }
+
+        return [];
+      }
+
+      function formatCurrency(amount, currency) {
+        if (amount == null || currency == null) {
+          return "";
+        }
+
+        const numericAmount = Number.parseFloat(amount);
+        if (Number.isNaN(numericAmount)) {
+          return "";
+        }
+
+        try {
+          return new Intl.NumberFormat("pl-PL", {
+            style: "currency",
+            currency,
+          }).format(numericAmount);
+        } catch (error) {
+          console.warn("Unable to format currency", error);
+          return `${numericAmount.toFixed(2)} ${currency}`;
+        }
+      }
+
+      function extractSecondLineParts(secondLine) {
+        if (!secondLine) {
+          return { size: "", condition: "" };
+        }
+
+        const parts = secondLine.split("·").map((part) => part.trim());
+        return {
+          size: parts[0] || "",
+          condition: parts[1] || "",
+        };
+      }
+
+      function getItemLabel(item) {
+        if (item?.item_box?.accessibility_label) {
+          return item.item_box.accessibility_label;
+        }
+
+        const pieces = [];
+        const title = item?.title || (item?.id ? `Przedmiot ${item.id}` : "Przedmiot");
+        pieces.push(title);
+
+        const brand = item?.brand || item?.item_box?.first_line;
+        if (brand) {
+          pieces.push(`marka: ${brand}`);
+        }
+
+        const secondLineParts = extractSecondLineParts(item?.item_box?.second_line);
+        const condition = item?.status || secondLineParts.condition;
+        if (condition) {
+          pieces.push(`stan: ${condition}`);
+        }
+
+        const size = item?.size || secondLineParts.size;
+        if (size) {
+          pieces.push(`rozmiar: ${size}`);
+        }
+
+        const currency = item?.price?.currency_code || item?.currency;
+        const price = formatCurrency(item?.price?.amount, currency);
+        if (price) {
+          pieces.push(price);
+        }
+
+        const totalCurrency =
+          item?.total_item_price?.currency_code || item?.price?.currency_code || item?.currency;
+        const totalPrice = formatCurrency(item?.total_item_price?.amount, totalCurrency);
+        if (totalPrice) {
+          pieces.push(`${totalPrice} zawiera Ochronę Kupujących`);
+        }
+
+        return pieces.join(", ");
+      }
+
+      function getItemLink(item) {
+        if (item?.url) {
+          return item.url;
+        }
+
+        if (item?.path) {
+          return `https://www.vinted.pl${item.path}`;
+        }
+
+        return "";
+      }
+
+      function getItemImageUrl(item) {
+        const mainPhoto = item?.photos?.find((photo) => photo?.is_main) || item?.photos?.[0];
+        if (!mainPhoto) {
+          return "";
+        }
+
+        const preferredThumbnail = mainPhoto.thumbnails?.find((thumb) =>
+          [
+            "thumb70x100",
+            "thumb100",
+            "thumb150",
+            "thumb150x210",
+            "thumb310",
+            "thumb310x430",
+          ].includes(thumb.type)
+        );
+
+        if (preferredThumbnail?.url) {
+          return preferredThumbnail.url;
+        }
+
+        if (mainPhoto.url) {
+          return mainPhoto.url;
+        }
+
+        if (mainPhoto.full_size_url) {
+          return mainPhoto.full_size_url;
+        }
+
+        return "";
+      }
+
+      function buildMetaLine(item) {
+        const segments = [];
+        if (item?.item_box?.first_line) {
+          segments.push(item.item_box.first_line);
+        }
+
+        if (item?.item_box?.second_line) {
+          segments.push(item.item_box.second_line);
+        }
+
+        return segments.join(" · ");
+      }
+
+      function buildPriceLine(item) {
+        const priceCurrency = item?.price?.currency_code || item?.currency;
+        const priceText = formatCurrency(item?.price?.amount, priceCurrency);
+        const totalCurrency =
+          item?.total_item_price?.currency_code || item?.price?.currency_code || item?.currency;
+        const totalText = formatCurrency(item?.total_item_price?.amount, totalCurrency);
+
+        if (!priceText && !totalText) {
+          return "";
+        }
+
+        if (priceText && totalText) {
+          return `${priceText} • Z ochroną kupujących: ${totalText}`;
+        }
+
+        return priceText || totalText || "";
+      }
+
+      function createItemElement(item) {
+        const listItem = document.createElement("li");
+        listItem.className = "wardrobe-item";
+
+        const container = document.createElement("div");
+        container.className = "item-body";
+
+        const imageUrl = getItemImageUrl(item);
+        if (imageUrl) {
+          const image = document.createElement("img");
+          image.className = "item-thumbnail";
+          image.src = imageUrl;
+          image.alt = item?.title || "Miniatura produktu";
+          container.appendChild(image);
+        }
+
+        const content = document.createElement("div");
+        content.className = "item-content";
+
+        const label = getItemLabel(item);
+        const linkUrl = getItemLink(item);
+
+        if (linkUrl) {
+          const link = document.createElement("a");
+          link.href = linkUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = label;
+          link.className = "item-link";
+          content.appendChild(link);
+        } else {
+          const span = document.createElement("span");
+          span.textContent = label;
+          span.className = "item-link";
+          content.appendChild(span);
+        }
+
+        const metaLine = buildMetaLine(item);
+        if (metaLine) {
+          const meta = document.createElement("p");
+          meta.className = "item-meta";
+          meta.textContent = metaLine;
+          content.appendChild(meta);
+        }
+
+        const priceLine = buildPriceLine(item);
+        if (priceLine) {
+          const priceParagraph = document.createElement("p");
+          priceParagraph.className = "item-price";
+
+          const [pricePart, rest] = priceLine.split(" • ");
+          const strong = document.createElement("strong");
+          strong.textContent = pricePart;
+          priceParagraph.appendChild(strong);
+
+          if (rest) {
+            const restSpan = document.createElement("span");
+            restSpan.textContent = `• ${rest}`;
+            priceParagraph.appendChild(restSpan);
+          }
+
+          content.appendChild(priceParagraph);
+        }
+
+        container.appendChild(content);
+        listItem.appendChild(container);
+        return listItem;
+      }
+
+      async function loadProducts() {
+        try {
+          updateStatus("Przygotowywanie sesji Vinted…");
+          const sessionResult = await fetchWithProxyFallback(MEMBER_URL, {
+            headers: {
+              accept:
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+          });
+
+          if (!sessionResult.response.ok) {
+            const body = await safeReadText(sessionResult.response);
+            throw new Error(
+              `Nie udało się przygotować sesji (status ${sessionResult.response.status}). ${body}`
+            );
+          }
+
+          await sessionResult.response.text();
+
+          if (sessionResult.usedProxy) {
+            updateStatus("Sesja przygotowana przy użyciu proxy CORS…");
+          } else {
+            updateStatus("Sesja przygotowana. Pobieranie przedmiotów…");
+          }
+
+          const itemsResult = await fetchWithProxyFallback(WARDROBE_URL, {
+            headers: {
+              accept: "application/json",
+            },
+          });
+
+          if (!itemsResult.response.ok) {
+            const body = await safeReadText(itemsResult.response);
+            throw new Error(
+              `Nie udało się pobrać przedmiotów (status ${itemsResult.response.status}). ${body}`
+            );
+          }
+
+          if (itemsResult.usedProxy) {
+            updateStatus("Pobieranie przedmiotów przy użyciu proxy CORS…");
+          } else {
+            updateStatus("Pobieranie przedmiotów…");
+          }
+
+          const payload = await itemsResult.response.json();
+          const items = normaliseWardrobeItems(payload);
+
+          listElement.innerHTML = "";
+
+          if (!items.length) {
+            updateStatus("Nie znaleziono żadnych przedmiotów w tej szafie.");
+            return;
+          }
+
+          items.forEach((item) => {
+            const node = createItemElement(item);
+            listElement.appendChild(node);
+          });
+
+          if (itemsResult.usedProxy) {
+            updateStatus(
+              "Przedmioty załadowane przez proxy z powodu ograniczeń CORS."
+            );
+          } else {
+            updateStatus("");
+          }
+        } catch (error) {
+          console.error("Błąd podczas ładowania przedmiotów Vinted", error);
+          updateStatus(
+            "Nie udało się załadować przedmiotów. Upewnij się, że masz dostęp do Vinted i wymagane ciasteczka, a następnie odśwież stronę."
+          );
+        }
+      }
+
+      loadProducts();
+    </script>
+  </body>
+</html>
