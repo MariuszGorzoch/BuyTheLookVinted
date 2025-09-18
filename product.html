@@ -504,6 +504,9 @@
     <script>
       const apiBaseUrl =
         "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
+      const monittaStoreEndpoint =
+        "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/MonittaStore";
+      const monittaStoreItems = [];
       const imageBaseUrl =
         "https://buythelookvintagestorage.blob.core.windows.net/uploads/";
       const imageSasToken =
@@ -527,10 +530,93 @@
         ),
       );
 
+      if (typeof window !== "undefined") {
+        window.monittaStoreItems = monittaStoreItems;
+      }
+
       function appendImageSasParams(url) {
         for (const [key, value] of imageSasEntries) {
           url.searchParams.set(key, value);
         }
+      }
+
+      function extractMonittaStoreItems(payload, visited = new WeakSet()) {
+        if (payload == null) {
+          return [];
+        }
+
+        if (Array.isArray(payload)) {
+          return payload;
+        }
+
+        if (typeof payload !== "object") {
+          return [];
+        }
+
+        if (visited.has(payload)) {
+          return [];
+        }
+        visited.add(payload);
+
+        const candidateKeys = [
+          "items",
+          "products",
+          "data",
+          "results",
+          "entries",
+          "payload",
+          "monittaStore",
+          "monittaStoreItems",
+          "value",
+        ];
+
+        for (const key of candidateKeys) {
+          if (Array.isArray(payload[key])) {
+            return payload[key];
+          }
+        }
+
+        for (const key of candidateKeys) {
+          const nested = payload[key];
+          if (nested && typeof nested === "object") {
+            const extracted = extractMonittaStoreItems(nested, visited);
+            if (extracted.length) {
+              return extracted;
+            }
+          }
+        }
+
+        for (const value of Object.values(payload)) {
+          if (value && typeof value === "object") {
+            const extracted = extractMonittaStoreItems(value, visited);
+            if (extracted.length) {
+              return extracted;
+            }
+          }
+        }
+
+        return [];
+      }
+
+      async function loadMonittaStoreItems() {
+        try {
+          const response = await fetch(monittaStoreEndpoint);
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const payload = await response.json();
+          const items = extractMonittaStoreItems(payload).filter(
+            (item) => item != null,
+          );
+
+          monittaStoreItems.splice(0, monittaStoreItems.length, ...items);
+        } catch (error) {
+          console.error("Failed to load Monitta Store items.", error);
+          monittaStoreItems.splice(0, monittaStoreItems.length);
+        }
+
+        return monittaStoreItems;
       }
 
       function buildProductImageUrl(value) {
@@ -1471,6 +1557,11 @@
             "We could not load product information. Please verify the product ID and try again.";
           productCard.hidden = true;
         }
+      }
+
+      const monittaStoreItemsPromise = loadMonittaStoreItems();
+      if (typeof window !== "undefined") {
+        window.monittaStoreItemsPromise = monittaStoreItemsPromise;
       }
 
       loadProduct();
