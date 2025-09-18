@@ -411,6 +411,8 @@
 
         const apiBaseUrl =
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
+        const uploadBaseUrl =
+          "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/upload";
 
         const params = new URLSearchParams(window.location.search);
         const productId = params.get("productID") ?? params.get("id");
@@ -618,6 +620,18 @@
           return extensions.some((extension) => name.endsWith(extension));
         };
 
+        const separateImageFiles = (fileList) => {
+          const originalFiles = Array.from(fileList ?? []);
+          const imageFiles = originalFiles.filter(isImageFile);
+
+          return { originalFiles, imageFiles };
+        };
+
+        const getSelectedImageFiles = () => {
+          const { imageFiles } = separateImageFiles(newImagesInput?.files);
+          return imageFiles;
+        };
+
         const renderImages = (product) => {
           if (!imagesContainer) {
             return;
@@ -673,10 +687,9 @@
           newImagesPreview.innerHTML = "";
           newImagesPreview.setAttribute("aria-busy", "true");
 
-          const originalFiles = Array.from(fileList ?? []);
-          const files = originalFiles.filter(isImageFile);
+          const { originalFiles, imageFiles } = separateImageFiles(fileList);
 
-          if (files.length === 0) {
+          if (imageFiles.length === 0) {
             const empty = document.createElement("p");
             empty.className = "placeholder";
             empty.textContent =
@@ -697,7 +710,7 @@
             return;
           }
 
-          let pending = files.length;
+          let pending = imageFiles.length;
           const markReady = () => {
             pending -= 1;
             if (pending <= 0) {
@@ -705,7 +718,7 @@
             }
           };
 
-          files.forEach((file, index) => {
+          imageFiles.forEach((file, index) => {
             const figure = document.createElement("figure");
             const img = document.createElement("img");
             const caption = document.createElement("figcaption");
@@ -903,6 +916,45 @@
           return payload;
         };
 
+        const uploadProductImages = async (id, files) => {
+          if (!id || !Array.isArray(files) || files.length === 0) {
+            return null;
+          }
+
+          if (typeof FormData === "undefined") {
+            throw new Error("Przesyłanie zdjęć nie jest obsługiwane w tej przeglądarce.");
+          }
+
+          const formData = new FormData();
+          files.forEach((file, index) => {
+            if (!file) {
+              return;
+            }
+
+            const fallbackName = `image-${index + 1}`;
+            const fileName = file.name && file.name.trim() ? file.name : fallbackName;
+            formData.append("files", file, fileName);
+          });
+
+          const uploadEndpoint = `${uploadBaseUrl}/${encodeURIComponent(id)}`;
+          const response = await fetch(uploadEndpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Żądanie przesłania zdjęć nie powiodło się. Kod odpowiedzi: ${response.status}`
+            );
+          }
+
+          try {
+            return await response.json();
+          } catch (error) {
+            return null;
+          }
+        };
+
         const saveProduct = async () => {
           if (isSaving) {
             return;
@@ -931,6 +983,8 @@
             setStatus("Nie udało się przygotować danych produktu do zapisu.", "error");
             return;
           }
+
+          const selectedFiles = getSelectedImageFiles();
 
           setSavingState(true);
           setStatus("Trwa zapisywanie zmian produktu…");
@@ -968,7 +1022,33 @@
               }
             }
 
-            setStatus("Zmiany produktu zostały zapisane.", "success");
+            if (selectedFiles.length > 0) {
+              setStatus(
+                "Zmiany produktu zostały zapisane. Trwa przesyłanie wybranych zdjęć…"
+              );
+
+              try {
+                const refreshedProduct = await uploadProductImages(productId, selectedFiles);
+
+                if (refreshedProduct && typeof refreshedProduct === "object") {
+                  assignProduct(refreshedProduct);
+                  setStatus("Zmiany produktu oraz zdjęcia zostały zapisane.", "success");
+                } else {
+                  setStatus(
+                    "Zmiany produktu zostały zapisane, ale nie udało się odświeżyć danych po przesłaniu zdjęć.",
+                    "error"
+                  );
+                }
+              } catch (uploadError) {
+                console.error("Błąd podczas przesyłania zdjęć produktu:", uploadError);
+                setStatus(
+                  "Zmiany produktu zostały zapisane, ale nie udało się przesłać nowych zdjęć.",
+                  "error"
+                );
+              }
+            } else {
+              setStatus("Zmiany produktu zostały zapisane.", "success");
+            }
           } catch (error) {
             console.error("Błąd podczas zapisywania produktu:", error);
             setStatus(
