@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dodaj produkt</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #f7f7f7, #e9ecf1);
+        padding: 2rem 1rem;
+      }
+
+      main {
+        width: min(520px, 100%);
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+      }
+
+      h1 {
+        margin: 0 0 1.75rem;
+        font-size: clamp(1.75rem, 2vw + 1rem, 2.4rem);
+        text-align: center;
+        color: #212936;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      label {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      input[type="text"],
+      textarea,
+      input[type="file"] {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        padding: 0.85rem 1rem;
+        font: inherit;
+        color: #1f2937;
+        background-color: #f9fafb;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input[type="text"]:focus,
+      textarea:focus,
+      input[type="file"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        background-color: #ffffff;
+      }
+
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      .hint {
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.85rem 2.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover,
+      button:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.25);
+        outline: none;
+      }
+
+      button:active {
+        transform: translateY(1px);
+        box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
+      }
+
+      @media (max-width: 480px) {
+        main {
+          padding: 2rem 1.5rem;
+        }
+
+        button {
+          width: 100%;
+        }
+
+        .actions {
+          justify-content: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Dodaj nowy produkt</h1>
+      <form>
+        <div class="field">
+          <label for="style-name">Stylizacja</label>
+          <input
+            type="text"
+            id="style-name"
+            name="style-name"
+            placeholder="Wpisz nazwę stylizacji"
+            autocomplete="off"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="description">Opis</label>
+          <textarea
+            id="description"
+            name="description"
+            placeholder="Dodaj szczegółowy opis produktu"
+            rows="5"
+            required
+          ></textarea>
+        </div>
+
+        <div class="field">
+          <label for="product-images">Zdjęcia produktu</label>
+          <input
+            type="file"
+            id="product-images"
+            name="product-images"
+            accept="image/*"
+            multiple
+          />
+          <p class="hint">Możesz dodać jedno lub więcej zdjęć produktu.</p>
+        </div>
+
+        <div class="actions">
+          <button type="button">Zapisz</button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>
