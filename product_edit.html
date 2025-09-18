@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edytuj produkt</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #f7f7f7, #e9ecf1);
+        padding: 2rem 1rem;
+      }
+
+      main {
+        width: min(520px, 100%);
+        margin-inline: auto;
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 2.5rem 2rem;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.75rem, 2vw + 1rem, 2.4rem);
+        text-align: center;
+        color: #212936;
+      }
+
+      p {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #1f2937;
+        line-height: 1.6;
+      }
+
+      .highlight {
+        font-weight: 600;
+        color: #6366f1;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: center;
+      }
+
+      a.button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 999px;
+        padding: 0.85rem 2.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      a.button:hover,
+      a.button:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.25);
+        outline: none;
+      }
+
+      a.button:active {
+        transform: translateY(1px);
+        box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
+      }
+
+      @media (max-width: 480px) {
+        main {
+          padding: 2rem 1.5rem;
+        }
+
+        a.button {
+          width: 100%;
+        }
+      }
+
+      .status-error {
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Edytuj produkt</h1>
+      <p id="product-status">Trwa ładowanie danych produktu…</p>
+      <div class="actions">
+        <a class="button" href="product_add.html">Dodaj nowy produkt</a>
+      </div>
+    </main>
+    <script>
+      (function () {
+        const statusElement = document.getElementById("product-status");
+        const searchParams = new URLSearchParams(window.location.search);
+        const productId = searchParams.get("productID");
+
+        if (!productId) {
+          statusElement.textContent =
+            "Nie znaleziono identyfikatora produktu w adresie URL.";
+          statusElement.classList.add("status-error");
+          return;
+        }
+
+        const trimmedId = productId.trim();
+
+        if (!trimmedId) {
+          statusElement.textContent =
+            "Przekazany identyfikator produktu jest pusty.";
+          statusElement.classList.add("status-error");
+          return;
+        }
+
+        statusElement.innerHTML =
+          'Produkt o identyfikatorze <span class="highlight"></span> jest gotowy do edycji.';
+
+        const idElement = statusElement.querySelector(".highlight");
+        idElement.textContent = trimmedId;
+      })();
+    </script>
+  </body>
+</html>
