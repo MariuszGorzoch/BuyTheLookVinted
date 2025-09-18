@@ -121,6 +121,52 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
       }
 
+      input[type="file"] {
+        font: inherit;
+      }
+
+      .file-input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px dashed #c7d2fe;
+        padding: 0.75rem 1rem;
+        background-color: #eef2ff;
+        color: #312e81;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      }
+
+      .file-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        background-color: #e0e7ff;
+      }
+
+      .file-input::file-selector-button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.5rem 1.25rem;
+        margin-right: 0.75rem;
+        font: inherit;
+        font-weight: 600;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        cursor: pointer;
+        transition: filter 0.2s ease, transform 0.2s ease;
+      }
+
+      .file-input::file-selector-button:hover,
+      .file-input::file-selector-button:focus {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+      }
+
+      .hint {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+
       input[readonly],
       textarea[readonly] {
         background-color: #f3f4f6;
@@ -161,6 +207,18 @@
         font-size: 0.875rem;
         color: #4b5563;
         text-align: center;
+      }
+
+      .upload-preview {
+        margin-top: 0.75rem;
+      }
+
+      .upload-preview figure {
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.12);
+      }
+
+      .upload-preview figcaption {
+        color: #4338ca;
       }
 
       .placeholder {
@@ -261,6 +319,26 @@
           <div id="product-images" class="image-grid">
             <p class="placeholder">Brak zdjęć do wyświetlenia.</p>
           </div>
+          <div class="field">
+            <label for="new-images">Dodaj nowe zdjęcia</label>
+            <input
+              type="file"
+              id="new-images"
+              name="new-images"
+              class="file-input"
+              accept="image/*"
+              multiple
+            />
+            <p class="hint">Możesz wybrać kilka plików graficznych (PNG, JPG, WebP) jednocześnie.</p>
+            <div
+              id="new-images-preview"
+              class="image-grid upload-preview"
+              aria-live="polite"
+              aria-busy="false"
+            >
+              <p class="placeholder">Nie wybrano jeszcze nowych zdjęć.</p>
+            </div>
+          </div>
         </fieldset>
 
         <fieldset>
@@ -284,6 +362,8 @@
         const nameInput = document.getElementById("product-name");
         const descriptionInput = document.getElementById("product-description");
         const imagesContainer = document.getElementById("product-images");
+        const newImagesInput = document.getElementById("new-images");
+        const newImagesPreview = document.getElementById("new-images-preview");
         const vintageList = document.getElementById("vintage-products");
         const rawJson = document.getElementById("raw-json");
 
@@ -333,6 +413,33 @@
           return fallback;
         };
 
+        const isImageFile = (file) => {
+          if (!file) {
+            return false;
+          }
+
+          if (file.type && file.type.startsWith("image/")) {
+            return true;
+          }
+
+          const name = (file.name ?? "").toLowerCase();
+          const extensions = [
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".jfif",
+            ".pjpeg",
+            ".gif",
+            ".bmp",
+            ".webp",
+            ".avif",
+            ".heic",
+            ".heif",
+          ];
+
+          return extensions.some((extension) => name.endsWith(extension));
+        };
+
         const renderImages = (product) => {
           const images = toArray(product?.images ?? product?.image ?? product?.photos);
           imagesContainer.innerHTML = "";
@@ -375,6 +482,83 @@
             imagesContainer.appendChild(empty);
           }
         };
+
+        const renderSelectedImages = (fileList) => {
+          if (!newImagesPreview) {
+            return;
+          }
+
+          newImagesPreview.innerHTML = "";
+          newImagesPreview.setAttribute("aria-busy", "true");
+
+          const originalFiles = Array.from(fileList ?? []);
+          const files = originalFiles.filter(isImageFile);
+
+          if (files.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "placeholder";
+            empty.textContent =
+              originalFiles.length > 0
+                ? "Wybrane pliki nie są obsługiwanymi obrazami."
+                : "Nie wybrano jeszcze nowych zdjęć.";
+            newImagesPreview.appendChild(empty);
+            newImagesPreview.setAttribute("aria-busy", "false");
+            return;
+          }
+
+          if (typeof FileReader === "undefined") {
+            const info = document.createElement("p");
+            info.className = "placeholder";
+            info.textContent = "Twoja przeglądarka nie obsługuje podglądu wybranych zdjęć.";
+            newImagesPreview.appendChild(info);
+            newImagesPreview.setAttribute("aria-busy", "false");
+            return;
+          }
+
+          let pending = files.length;
+          const markReady = () => {
+            pending -= 1;
+            if (pending <= 0) {
+              newImagesPreview.setAttribute("aria-busy", "false");
+            }
+          };
+
+          files.forEach((file, index) => {
+            const figure = document.createElement("figure");
+            const img = document.createElement("img");
+            const caption = document.createElement("figcaption");
+            const label = file.name && file.name.trim() ? file.name : `Nowe zdjęcie ${index + 1}`;
+
+            img.loading = "lazy";
+            img.alt = label;
+            caption.textContent = label;
+
+            figure.appendChild(img);
+            figure.appendChild(caption);
+            newImagesPreview.appendChild(figure);
+
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+              img.src = reader.result;
+              markReady();
+            });
+            reader.addEventListener("error", markReady);
+            reader.addEventListener("abort", markReady);
+            try {
+              reader.readAsDataURL(file);
+            } catch (error) {
+              console.error("Nie udało się wczytać pliku graficznego:", error);
+              markReady();
+            }
+          });
+        };
+
+        if (newImagesInput) {
+          renderSelectedImages(newImagesInput.files);
+          newImagesInput.addEventListener("change", () => {
+            renderSelectedImages(newImagesInput.files);
+          });
+        }
 
         const renderVintageProducts = (product) => {
           const vintageProducts = toArray(product?.vintageProducts ?? product?.relatedProducts);
