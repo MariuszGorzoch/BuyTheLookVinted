@@ -332,6 +332,173 @@
     <script>
       const apiBaseUrl =
         "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/products";
+      const imageBaseUrl =
+        "https://buythelookvintagestorage.blob.core.windows.net/uploads/";
+      const imageSasToken =
+        "sv=2024-11-04&ss=bfqt&srt=sco&sp=rl&se=2026-09-18T22:54:01Z&st=2025-09-18T14:39:01Z&spr=https&sig=roACoFS1yrHnyvMnUZWwy7w1VTfvQBL2jRCA9zGRdfA%3D";
+      const imageContainerUrl = new URL(imageBaseUrl);
+      const imageContainerHost = imageContainerUrl.host;
+      const imageContainerHostLower = imageContainerHost.toLowerCase();
+      const imageContainerPath = imageContainerUrl.pathname.replace(/^[\\/]+/, "");
+      const imageContainerPathPrefix =
+        imageContainerPath && !imageContainerPath.endsWith("/")
+          ? `${imageContainerPath}/`
+          : imageContainerPath;
+      const imageContainerPathPrefixLower = imageContainerPathPrefix
+        ? imageContainerPathPrefix.toLowerCase()
+        : "";
+      const imageSasEntries = Array.from(
+        new URLSearchParams(
+          imageSasToken.startsWith("?")
+            ? imageSasToken.slice(1)
+            : imageSasToken,
+        ),
+      );
+
+      function appendImageSasParams(url) {
+        for (const [key, value] of imageSasEntries) {
+          url.searchParams.set(key, value);
+        }
+      }
+
+      function buildProductImageUrl(value) {
+        if (value == null) {
+          return "";
+        }
+
+        if (value instanceof String) {
+          return buildProductImageUrl(value.valueOf());
+        }
+
+        if (Array.isArray(value)) {
+          for (const candidate of value) {
+            const resolved = buildProductImageUrl(candidate);
+            if (resolved) {
+              return resolved;
+            }
+          }
+          return "";
+        }
+
+        if (value && typeof value === "object") {
+          const candidateKeys = [
+            "url",
+            "href",
+            "src",
+            "imageUrl",
+            "image",
+            "thumbnailUrl",
+            "thumbnail",
+            "picture",
+            "photo",
+            "path",
+            "value",
+          ];
+
+          for (const key of candidateKeys) {
+            if (key in value) {
+              const resolved = buildProductImageUrl(value[key]);
+              if (resolved) {
+                return resolved;
+              }
+            }
+          }
+
+          if (value instanceof URL) {
+            return buildProductImageUrl(value.href);
+          }
+
+          return "";
+        }
+
+        const stringValue = typeof value === "string" ? value : String(value);
+        const trimmedValue = stringValue.trim();
+        if (!trimmedValue) {
+          return "";
+        }
+
+        const sanitizedValue = trimmedValue.replace(/\\/g, "/");
+        const sanitizedValueLower = sanitizedValue.toLowerCase();
+
+        const nonHttpSchemeMatch = /^[a-z][a-z\d+\-.]*:/i.exec(sanitizedValue);
+        if (
+          nonHttpSchemeMatch &&
+          !/^https?:/i.test(sanitizedValue) &&
+          !/^[a-z]:[\\/]/i.test(trimmedValue)
+        ) {
+          return sanitizedValue;
+        }
+
+        const hasHttpScheme = /^https?:/i.test(sanitizedValue);
+        const protocolRelative =
+          sanitizedValue.startsWith("//") || trimmedValue.startsWith("//");
+        if (hasHttpScheme || protocolRelative) {
+          try {
+            const candidateValue = protocolRelative
+              ? `https:${sanitizedValue}`
+              : sanitizedValue;
+            const absoluteUrl = new URL(candidateValue);
+            const inImageContainer =
+              absoluteUrl.host === imageContainerHost &&
+              absoluteUrl.pathname.startsWith(imageContainerUrl.pathname);
+
+            if (inImageContainer) {
+              appendImageSasParams(absoluteUrl);
+              return absoluteUrl.toString();
+            }
+
+            return absoluteUrl.toString();
+          } catch (error) {
+            return sanitizedValue;
+          }
+        }
+
+        if (
+          sanitizedValueLower.includes(imageContainerHostLower) &&
+          !sanitizedValue.includes("://")
+        ) {
+          try {
+            const normalizedValue = sanitizedValue.replace(/^[\\/]+/, "");
+            const azureUrl = new URL(`https://${normalizedValue}`);
+            const inImageContainer =
+              azureUrl.host === imageContainerHost &&
+              azureUrl.pathname.startsWith(imageContainerUrl.pathname);
+
+            if (inImageContainer) {
+              appendImageSasParams(azureUrl);
+              return azureUrl.toString();
+            }
+          } catch (error) {
+            // Continue to normalized path handling below if parsing fails
+          }
+        }
+
+        let normalizedPath = sanitizedValue.replace(/^[a-z]:[\\/]+/i, "");
+        normalizedPath = normalizedPath.replace(/^[\\/]+/, "");
+        if (!normalizedPath) {
+          return "";
+        }
+
+        if (imageContainerPathPrefix) {
+          const normalizedPathLower = normalizedPath.toLowerCase();
+          if (normalizedPathLower.startsWith(imageContainerPathPrefixLower)) {
+            normalizedPath = normalizedPath.slice(imageContainerPathPrefix.length);
+          }
+        }
+
+        try {
+          const resolvedUrl = new URL(normalizedPath, imageContainerUrl);
+          appendImageSasParams(resolvedUrl);
+          return resolvedUrl.toString();
+        } catch (error) {
+          const base = imageBaseUrl.endsWith("/")
+            ? imageBaseUrl
+            : `${imageBaseUrl}/`;
+          const prefix = imageSasToken.startsWith("?") ? "" : "?";
+          return `${base}${normalizedPath}${prefix}${imageSasToken}`;
+        }
+      }
+
       const statusElement = document.getElementById("status");
       const productCard = document.getElementById("product-card");
       const productIdElement = document.getElementById("product-id");
@@ -666,7 +833,7 @@
             productActionsElement.hidden = true;
           }
 
-          const imageUrl = resolveField(product, [
+          const imageValue = resolveField(product, [
             "imageUrl",
             "image",
             "thumbnailUrl",
@@ -674,8 +841,9 @@
             "picture",
             "photo",
           ]);
-          if (imageUrl) {
-            productImage.src = imageUrl;
+          const resolvedImageUrl = buildProductImageUrl(imageValue);
+          if (resolvedImageUrl) {
+            productImage.src = resolvedImageUrl;
             productImage.alt = `${title} image`;
             productImage.hidden = false;
             imageFallback.hidden = true;
