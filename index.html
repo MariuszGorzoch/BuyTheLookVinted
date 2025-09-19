@@ -168,27 +168,10 @@
         text-decoration: underline;
       }
 
-      .product-price {
-        font-weight: 600;
-        color: #0e9f6e;
-        white-space: nowrap;
-      }
-
       .product-description {
         margin: 0;
         color: #52606d;
         line-height: 1.6;
-      }
-
-      .product-fallback {
-        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo,
-          Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 0.85rem;
-        background: rgba(15, 23, 42, 0.04);
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        word-break: break-word;
-        white-space: pre-wrap;
       }
 
       @media (max-width: 640px) {
@@ -225,8 +208,7 @@
           </div>
           <div class="product-info">
             <div class="product-title-row">
-              <a class="product-name" target="_blank" rel="noopener"></a>
-              <span class="product-price"></span>
+              <a class="product-name"></a>
             </div>
             <p class="product-description"></p>
           </div>
@@ -240,69 +222,6 @@
       const statusElement = document.getElementById("status");
       const gridElement = document.getElementById("product-grid");
       const template = document.getElementById("product-card-template");
-
-      function resolveField(product, keys, fallback = "") {
-        for (const key of keys) {
-          if (key in product && product[key] != null && product[key] !== "") {
-            return product[key];
-          }
-        }
-        return fallback;
-      }
-
-      function formatPrice(value, currency) {
-        if (value == null || value === "") {
-          return "";
-        }
-
-        if (typeof value === "string") {
-          const trimmed = value.trim();
-          if (trimmed) {
-            return trimmed;
-          }
-        }
-
-        const numericValue = Number(value);
-        if (Number.isFinite(numericValue)) {
-          if (typeof currency === "string" && currency.trim()) {
-            try {
-              return new Intl.NumberFormat(undefined, {
-                style: "currency",
-                currency: currency.trim().toUpperCase(),
-              }).format(numericValue);
-            } catch (error) {
-              return `${numericValue.toFixed(2)} ${currency}`;
-            }
-          }
-
-          return numericValue.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          });
-        }
-
-        return "";
-      }
-
-      function getDescription(product) {
-        const summary = resolveField(product, [
-          "description",
-          "summary",
-          "details",
-          "text",
-          "subtitle",
-        ]);
-
-        if (summary) {
-          return summary;
-        }
-
-        try {
-          return JSON.stringify(product, null, 2);
-        } catch (error) {
-          return String(product);
-        }
-      }
 
       function createProductDetailsUrl(productId) {
         if (productId == null) {
@@ -322,6 +241,61 @@
           const encodedId = encodeURIComponent(normalizedId);
           return `product.html?productID=${encodedId}`;
         }
+      }
+
+      function getProductId(product) {
+        if (!product) {
+          return "";
+        }
+
+        if (typeof product.id === "string") {
+          return product.id.trim();
+        }
+
+        if (product.id != null) {
+          return String(product.id).trim();
+        }
+
+        return "";
+      }
+
+      function getProductName(product) {
+        if (typeof product?.Name === "string") {
+          const trimmed = product.Name.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+
+        return "Product";
+      }
+
+      function getProductDescription(product) {
+        if (typeof product?.Description === "string") {
+          const trimmed = product.Description.trim();
+          if (trimmed) {
+            return trimmed;
+          }
+        }
+
+        return "";
+      }
+
+      function getPrimaryImage(product) {
+        if (!Array.isArray(product?.Images)) {
+          return "";
+        }
+
+        for (const image of product.Images) {
+          if (typeof image === "string") {
+            const trimmed = image.trim();
+            if (trimmed) {
+              return trimmed;
+            }
+          }
+        }
+
+        return "";
       }
 
       async function loadProducts() {
@@ -356,53 +330,17 @@
             const media = instance.querySelector(".product-media");
             const image = instance.querySelector("img");
             const nameLink = instance.querySelector(".product-name");
-            const priceElement = instance.querySelector(".product-price");
             const descriptionElement = instance.querySelector(".product-description");
 
-            const title =
-              resolveField(product, ["name", "title", "productName", "label"], "Product");
-            const url = resolveField(product, ["url", "link", "productUrl", "href"]);
-            let productId = resolveField(product, [
-              "productID",
-              "productId",
-              "id",
-              "Id",
-            ]);
-            if (productId != null) {
-              productId =
-                typeof productId === "string"
-                  ? productId.trim()
-                  : String(productId).trim();
-            }
-            const detailsPageUrl = createProductDetailsUrl(productId);
-            const imageUrl = resolveField(product, [
-              "imageUrl",
-              "image",
-              "thumbnailUrl",
-              "thumbnail",
-              "picture",
-              "photo",
-            ]);
-            const priceValue = resolveField(product, [
-              "priceFormatted",
-              "price",
-              "priceValue",
-              "amount",
-              "currentPrice",
-            ]);
-            const currency = resolveField(product, [
-              "currency",
-              "priceCurrency",
-              "currencyCode",
-              "currencySymbol",
-            ]);
+            const title = getProductName(product);
+            const productId = getProductId(product);
+            const detailsPageUrl = productId
+              ? createProductDetailsUrl(productId)
+              : "";
 
             nameLink.textContent = title;
             if (detailsPageUrl) {
               nameLink.href = detailsPageUrl;
-              nameLink.removeAttribute("target");
-              nameLink.removeAttribute("rel");
-
               card.classList.add("product-card--interactive");
               card.dataset.productId = productId;
               card.setAttribute("role", "link");
@@ -425,36 +363,22 @@
                   navigateToDetails();
                 }
               });
-            } else if (url) {
-              nameLink.href = url;
-              nameLink.target = "_blank";
-              nameLink.rel = "noopener noreferrer";
             } else {
               nameLink.removeAttribute("href");
-              nameLink.removeAttribute("target");
-              nameLink.removeAttribute("rel");
-              nameLink.style.cursor = "default";
+              delete card.dataset.productId;
+              card.classList.remove("product-card--interactive");
+              card.removeAttribute("role");
+              card.removeAttribute("tabindex");
             }
 
-            const formattedPrice = formatPrice(priceValue, currency);
-            if (formattedPrice) {
-              priceElement.textContent = formattedPrice;
-            } else {
-              priceElement.remove();
-            }
-
-            const description = getDescription(product);
-            const isJsonDescription =
-              typeof description === "string" && description.trim().startsWith("{");
-            if (isJsonDescription) {
-              descriptionElement.textContent = "";
-              descriptionElement.classList.add("product-fallback");
+            const description = getProductDescription(product);
+            if (description) {
               descriptionElement.textContent = description;
             } else {
-              descriptionElement.classList.remove("product-fallback");
-              descriptionElement.textContent = description;
+              descriptionElement.remove();
             }
 
+            const imageUrl = getPrimaryImage(product);
             if (imageUrl) {
               image.src = imageUrl;
               image.alt = `${title} image`;
