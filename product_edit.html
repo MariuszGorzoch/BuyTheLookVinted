@@ -2391,16 +2391,6 @@
             addButton.textContent = "Dodaj do vintage";
             actions.appendChild(addButton);
 
-            if (entry.url) {
-              const link = document.createElement("a");
-              link.href = entry.url;
-              link.target = "_blank";
-              link.rel = "noopener";
-              link.className = "monitta-option__link";
-              link.textContent = "Zobacz na Monitta Store";
-              actions.appendChild(link);
-            }
-
             listItem.appendChild(actions);
 
             fragment.appendChild(listItem);
@@ -2690,10 +2680,6 @@
             img.alt = altText;
             figure.appendChild(img);
 
-            const caption = document.createElement("figcaption");
-            caption.textContent = altText;
-            figure.appendChild(caption);
-
             imagesContainer.appendChild(figure);
             rendered += 1;
           });
@@ -2768,15 +2754,12 @@
           imageFiles.forEach((file, index) => {
             const figure = document.createElement("figure");
             const img = document.createElement("img");
-            const caption = document.createElement("figcaption");
             const label = file.name && file.name.trim() ? file.name : `Nowe zdjęcie ${index + 1}`;
 
             img.loading = "lazy";
             img.alt = label;
-            caption.textContent = label;
 
             figure.appendChild(img);
-            figure.appendChild(caption);
             newImagesPreview.appendChild(figure);
 
             const reader = new FileReader();
