@@ -613,11 +613,8 @@
       </div>
       <header>
         <h1>Edycja produktu</h1>
-        <p class="subtitle">
-          Wczytaj szczegóły istniejącej stylizacji, korzystając z identyfikatora produktu.
-        </p>
       </header>
-      <p id="status" role="status" aria-live="polite"></p>
+      <p id="status" role="status" aria-live="polite" hidden></p>
       <form id="product-form" hidden novalidate>
         <fieldset>
           <legend>Podstawowe informacje</legend>
@@ -875,6 +872,16 @@
             statusElement.dataset.statusType = type;
           }
           statusElement.hidden = false;
+        };
+
+        const clearStatus = () => {
+          if (!statusElement) {
+            return;
+          }
+
+          statusElement.textContent = "";
+          statusElement.hidden = true;
+          delete statusElement.dataset.statusType;
         };
 
         const toArray = (value) => {
@@ -3320,9 +3327,7 @@
             }
 
             if (selectedFiles.length > 0) {
-              setStatus(
-                "Zmiany produktu zostały zapisane. Trwa przesyłanie wybranych zdjęć…"
-              );
+              setStatus("Trwa przesyłanie wybranych zdjęć…");
 
               try {
                 const refreshedProduct = await uploadProductImages(productId, selectedFiles);
@@ -3333,7 +3338,7 @@
                     productId,
                   );
                   assignProduct(normalizedRefreshed ?? refreshedProduct);
-                  setStatus("Zmiany produktu oraz zdjęcia zostały zapisane.", "success");
+                  clearStatus();
                   redirectToProductPage(productId);
                 } else {
                   setStatus(
@@ -3349,7 +3354,7 @@
                 );
               }
             } else {
-              setStatus("Zmiany produktu zostały zapisane.", "success");
+              clearStatus();
               redirectToProductPage(productId);
             }
           } catch (error) {
@@ -3395,7 +3400,7 @@
           try {
             const product = await fetchProductDetails();
             assignProduct(product);
-            setStatus("Dane produktu zostały pomyślnie wczytane.", "success");
+            clearStatus();
           } catch (error) {
             console.error("Błąd podczas wczytywania danych produktu:", error);
             setStatus(
