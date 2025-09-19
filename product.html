@@ -666,18 +666,20 @@
         return monittaStoreItems;
       }
 
-      function buildProductImageUrl(value) {
+      function buildProductImageUrl(value, options = {}) {
         if (value == null) {
           return "";
         }
 
+        const skipSasToken = Boolean(options?.skipSas);
+
         if (value instanceof String) {
-          return buildProductImageUrl(value.valueOf());
+          return buildProductImageUrl(value.valueOf(), options);
         }
 
         if (Array.isArray(value)) {
           for (const candidate of value) {
-            const resolved = buildProductImageUrl(candidate);
+            const resolved = buildProductImageUrl(candidate, options);
             if (resolved) {
               return resolved;
             }
@@ -702,7 +704,7 @@
 
           for (const key of candidateKeys) {
             if (key in value) {
-              const resolved = buildProductImageUrl(value[key]);
+              const resolved = buildProductImageUrl(value[key], options);
               if (resolved) {
                 return resolved;
               }
@@ -710,7 +712,7 @@
           }
 
           if (value instanceof URL) {
-            return buildProductImageUrl(value.href);
+            return buildProductImageUrl(value.href, options);
           }
 
           return "";
@@ -747,7 +749,7 @@
               absoluteUrl.host === imageContainerHost &&
               absoluteUrl.pathname.startsWith(imageContainerUrl.pathname);
 
-            if (inImageContainer) {
+            if (inImageContainer && !skipSasToken) {
               appendImageSasParams(absoluteUrl);
               return absoluteUrl.toString();
             }
@@ -770,7 +772,9 @@
               azureUrl.pathname.startsWith(imageContainerUrl.pathname);
 
             if (inImageContainer) {
-              appendImageSasParams(azureUrl);
+              if (!skipSasToken) {
+                appendImageSasParams(azureUrl);
+              }
               return azureUrl.toString();
             }
           } catch (error) {
@@ -793,24 +797,39 @@
 
         try {
           const resolvedUrl = new URL(normalizedPath, imageContainerUrl);
-          appendImageSasParams(resolvedUrl);
+          if (!skipSasToken) {
+            appendImageSasParams(resolvedUrl);
+          }
           return resolvedUrl.toString();
         } catch (error) {
           const base = imageBaseUrl.endsWith("/")
             ? imageBaseUrl
             : `${imageBaseUrl}/`;
-          const prefix = imageSasToken.startsWith("?") ? "" : "?";
-          return `${base}${normalizedPath}${prefix}${imageSasToken}`;
+          if (!skipSasToken && imageSasToken) {
+            const prefix = imageSasToken.startsWith("?") ? "" : "?";
+            return `${base}${normalizedPath}${prefix}${imageSasToken}`;
+          }
+          return `${base}${normalizedPath}`;
         }
       }
 
-      function collectProductImageUrlsFromValue(value, addUrl, visited = new Set()) {
+      function collectProductImageUrlsFromValue(
+        value,
+        addUrl,
+        visited = new Set(),
+        options = {},
+      ) {
         if (value == null) {
           return;
         }
 
         if (value instanceof String) {
-          collectProductImageUrlsFromValue(value.valueOf(), addUrl, visited);
+          collectProductImageUrlsFromValue(
+            value.valueOf(),
+            addUrl,
+            visited,
+            options,
+          );
           return;
         }
 
@@ -821,7 +840,7 @@
 
         if (Array.isArray(value)) {
           for (const item of value) {
-            collectProductImageUrlsFromValue(item, addUrl, visited);
+            collectProductImageUrlsFromValue(item, addUrl, visited, options);
           }
           return;
         }
@@ -886,7 +905,7 @@
           for (const key of candidateKeys) {
             if (key in value) {
               matched = true;
-              collectProductImageUrlsFromValue(value[key], addUrl, visited);
+              collectProductImageUrlsFromValue(value[key], addUrl, visited, options);
             }
           }
 
@@ -897,7 +916,12 @@
           if (Number.isInteger(value.length) && value.length > 0) {
             for (let index = 0; index < value.length; index += 1) {
               if (index in value) {
-                collectProductImageUrlsFromValue(value[index], addUrl, visited);
+                collectProductImageUrlsFromValue(
+                  value[index],
+                  addUrl,
+                  visited,
+                  options,
+                );
               }
             }
             return;
@@ -905,14 +929,14 @@
 
           for (const nested of Object.values(value)) {
             if (nested && typeof nested === "object") {
-              collectProductImageUrlsFromValue(nested, addUrl, visited);
+              collectProductImageUrlsFromValue(nested, addUrl, visited, options);
             }
           }
 
           return;
         }
 
-        const resolved = buildProductImageUrl(value);
+        const resolved = buildProductImageUrl(value, options);
         if (resolved) {
           addUrl(resolved);
         }
@@ -955,6 +979,7 @@
 
         const galleryFields = [
           "images",
+          "Images",
           "imageUrls",
           "image_urls",
           "imageGallery",
@@ -978,7 +1003,16 @@
 
         for (const key of galleryFields) {
           if (key in product && product[key] != null && product[key] !== "") {
-            collectProductImageUrlsFromValue(product[key], addUrl);
+            if (typeof key === "string" && key.toLowerCase() === "images") {
+              collectProductImageUrlsFromValue(
+                product[key],
+                addUrl,
+                undefined,
+                { skipSas: true },
+              );
+            } else {
+              collectProductImageUrlsFromValue(product[key], addUrl);
+            }
           }
         }
 
