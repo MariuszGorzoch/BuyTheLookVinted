@@ -384,10 +384,27 @@
         gap: 0.5rem;
       }
 
+      .monitta-option__body {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .monitta-option__image {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #eef2ff;
+        flex-shrink: 0;
+      }
+
       .monitta-option__content {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       .monitta-option__title {
@@ -511,6 +528,21 @@
         gap: 0.35rem;
       }
 
+      .vintage-item__body {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+
+      .vintage-item__image {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #f3f4f6;
+        flex-shrink: 0;
+      }
+
       .vintage-item__header {
         display: flex;
         justify-content: space-between;
@@ -519,6 +551,14 @@
       }
 
       .vintage-item__content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .vintage-item__details {
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
@@ -1419,6 +1459,92 @@
           });
         };
 
+        const getMonittaEntryByIdentifier = (identifier) => {
+          if (identifier == null) {
+            return null;
+          }
+
+          const idText = toDisplayString(identifier).trim();
+          if (!idText) {
+            return null;
+          }
+
+          if (monittaState.selectedMap.has(idText)) {
+            return monittaState.selectedMap.get(idText);
+          }
+
+          if (monittaState.allProductsMap.has(idText)) {
+            return monittaState.allProductsMap.get(idText);
+          }
+
+          const normalized = idText.toLowerCase();
+
+          for (const [key, value] of monittaState.selectedMap.entries()) {
+            if (typeof key === "string" && key.toLowerCase() === normalized) {
+              return value;
+            }
+          }
+
+          for (const [key, value] of monittaState.allProductsMap.entries()) {
+            if (typeof key === "string" && key.toLowerCase() === normalized) {
+              return value;
+            }
+          }
+
+          return null;
+        };
+
+        const resolveMonittaImageUrl = (entry) => {
+          if (!entry) {
+            return "";
+          }
+
+          const sources = [];
+
+          if (entry && typeof entry === "object") {
+            if (entry.thumbnail != null) {
+              sources.push(entry.thumbnail);
+            }
+            if (entry.raw && typeof entry.raw === "object") {
+              sources.push(entry.raw);
+            }
+            sources.push(entry);
+          }
+
+          return findFirstImageUrl(...sources) || "";
+        };
+
+        const resolveVintageImageUrl = (item) => {
+          if (!item) {
+            return "";
+          }
+
+          const identifier = getVintageProductIdentifier(item);
+          if (identifier) {
+            const monittaEntry = getMonittaEntryByIdentifier(identifier);
+            if (monittaEntry) {
+              const fromMonitta = resolveMonittaImageUrl(monittaEntry);
+              if (fromMonitta) {
+                return fromMonitta;
+              }
+            }
+          }
+
+          const sources = [];
+
+          if (item && typeof item === "object") {
+            if (item.VintageProductImage != null) {
+              sources.push({ image: item.VintageProductImage });
+            }
+            if (item.vintageProductImage != null) {
+              sources.push({ image: item.vintageProductImage });
+            }
+            sources.push(item);
+          }
+
+          return findFirstImageUrl(...sources) || "";
+        };
+
         const isAbsoluteUrl = (value) =>
           typeof value === "string" && /^https?:\/\//i.test(value.trim());
 
@@ -1527,6 +1653,84 @@
 
           if (absoluteUrl) {
             return absoluteUrl;
+          }
+
+          return "";
+        };
+
+        const findFirstImageUrl = (...sources) => {
+          const queue = [];
+          const seen = new Set();
+
+          const enqueue = (value, context = false) => {
+            if (value == null) {
+              return;
+            }
+            queue.push({ value, context });
+          };
+
+          sources.forEach((source) => {
+            if (Array.isArray(source)) {
+              enqueue(source, typeof source === "string");
+            } else {
+              const initialContext = typeof source === "string";
+              enqueue(source, initialContext);
+            }
+          });
+
+          while (queue.length > 0) {
+            const { value, context } = queue.shift();
+
+            if (Array.isArray(value)) {
+              value.forEach((item) => enqueue(item, context));
+              continue;
+            }
+
+            if (typeof value === "string") {
+              if (!context) {
+                continue;
+              }
+              const trimmed = value.trim();
+              if (!trimmed) {
+                continue;
+              }
+              const url = buildImageUrlFromEntry(value);
+              if (url) {
+                return url;
+              }
+              continue;
+            }
+
+            if (typeof value !== "object") {
+              continue;
+            }
+
+            if (seen.has(value)) {
+              continue;
+            }
+            seen.add(value);
+
+            if (context) {
+              const url = buildImageUrlFromEntry(value);
+              if (url) {
+                return url;
+              }
+            }
+
+            Object.entries(value).forEach(([key, nested]) => {
+              if (nested == null) {
+                return;
+              }
+              const lowerKey = key.toLowerCase();
+              const nextContext =
+                context ||
+                lowerKey.includes("image") ||
+                lowerKey.includes("photo") ||
+                lowerKey.includes("thumb") ||
+                lowerKey.includes("picture") ||
+                lowerKey.includes("img");
+              enqueue(nested, nextContext);
+            });
           }
 
           return "";
@@ -1735,7 +1939,25 @@
               content.appendChild(description);
             }
 
-            listItem.appendChild(content);
+            const body = document.createElement("div");
+            body.className = "monitta-option__body";
+
+            const imageUrl = resolveMonittaImageUrl(entry);
+            if (imageUrl) {
+              const image = document.createElement("img");
+              image.className = "monitta-option__image";
+              image.src = imageUrl;
+              image.loading = "lazy";
+              image.decoding = "async";
+              const altTitle = toDisplayString(entry.title ?? "").trim();
+              image.alt = altTitle
+                ? `Zdjęcie ${altTitle}`
+                : "Zdjęcie produktu Monitta Store";
+              body.appendChild(image);
+            }
+
+            body.appendChild(content);
+            listItem.appendChild(body);
 
             const actions = document.createElement("div");
             actions.className = "monitta-option__actions";
@@ -2291,8 +2513,6 @@
             removeButton.textContent = "Usuń";
             header.appendChild(removeButton);
 
-            listItem.appendChild(header);
-
             const price = resolveField(item, ["price", "amount", "value"]);
             const currency = resolveField(
               item,
@@ -2301,8 +2521,29 @@
             );
             const description = resolveField(item, ["description", "summary", "details"]);
 
+            const body = document.createElement("div");
+            body.className = "vintage-item__body";
+
+            const imageUrl = resolveVintageImageUrl(item);
+            if (imageUrl) {
+              const image = document.createElement("img");
+              image.className = "vintage-item__image";
+              image.src = imageUrl;
+              image.loading = "lazy";
+              image.decoding = "async";
+              const altTitle = toDisplayString(titleText ?? "").trim();
+              image.alt = altTitle
+                ? `Zdjęcie ${altTitle}`
+                : "Zdjęcie produktu vintage";
+              body.appendChild(image);
+            }
+
+            const textWrapper = document.createElement("div");
+            textWrapper.className = "vintage-item__content";
+            textWrapper.appendChild(header);
+
             const details = document.createElement("div");
-            details.className = "vintage-item__content";
+            details.className = "vintage-item__details";
 
             if (price) {
               const priceElement = document.createElement("small");
@@ -2319,8 +2560,11 @@
             }
 
             if (details.children.length > 0) {
-              listItem.appendChild(details);
+              textWrapper.appendChild(details);
             }
+
+            body.appendChild(textWrapper);
+            listItem.appendChild(body);
 
             vintageList.appendChild(listItem);
           });
