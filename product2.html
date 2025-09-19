@@ -460,6 +460,72 @@
           title: "",
         };
 
+        function toTrimmedString(value, fallback = "") {
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+            return trimmed || fallback;
+          }
+
+          if (value == null) {
+            return fallback;
+          }
+
+          try {
+            const trimmed = String(value).trim();
+            return trimmed || fallback;
+          } catch (error) {
+            return fallback;
+          }
+        }
+
+        function normalizeVintageProduct(entry) {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return null;
+          }
+
+          const normalized = { ...entry };
+          normalized.VintageProductId = toTrimmedString(entry.VintageProductId);
+          normalized.VintageProductName = toTrimmedString(entry.VintageProductName);
+          normalized.VintageProductUrl = toTrimmedString(entry.VintageProductUrl);
+          return normalized;
+        }
+
+        function normalizeProduct(rawProduct, fallbackId = "") {
+          if (!rawProduct || typeof rawProduct !== "object") {
+            return null;
+          }
+
+          const normalized = { ...rawProduct };
+          const normalizedId = toTrimmedString(
+            rawProduct.id ?? rawProduct.Id ?? rawProduct.ID,
+            fallbackId,
+          );
+          normalized.id = normalizedId;
+          normalized.Name = toTrimmedString(rawProduct.Name);
+          normalized.Description = toTrimmedString(rawProduct.Description);
+
+          const images = Array.isArray(rawProduct.Images) ? rawProduct.Images : [];
+          const seenImages = new Set();
+          normalized.Images = images
+            .map((entry) => toTrimmedString(entry))
+            .filter((entry) => {
+              if (!entry || seenImages.has(entry)) {
+                return false;
+              }
+              seenImages.add(entry);
+              return true;
+            });
+
+          const vintageSource = Array.isArray(rawProduct.VintageProducts)
+            ? rawProduct.VintageProducts
+            : [];
+          normalized.VintageProducts = vintageSource
+            .map((entry) => normalizeVintageProduct(entry))
+            .filter(Boolean);
+
+          return normalized;
+        }
+
         monittaStatusEl.textContent = "Loading related listings…";
         monittaStatusEl.hidden = false;
 
@@ -488,12 +554,23 @@
         async function init(productId) {
           try {
             const product = await fetchProduct(productId);
-            renderProduct(product, productId);
+            const normalizedProduct = normalizeProduct(product, productId);
+            if (!normalizedProduct) {
+              throw new Error("Received an invalid product payload.");
+            }
+
+            renderProduct(normalizedProduct, productId);
             statusEl.hidden = true;
             contentEl.hidden = false;
 
             const { items: monittaItems, error } = await loadMonittaStoreItems();
-            renderMonitta(product?.VintageProducts, monittaItems, error);
+            renderMonitta(
+              Array.isArray(normalizedProduct.VintageProducts)
+                ? normalizedProduct.VintageProducts
+                : [],
+              monittaItems,
+              error,
+            );
           } catch (error) {
             console.error("Failed to load product details.", error);
             statusEl.textContent =
@@ -582,22 +659,11 @@
         }
 
         function renderProduct(product, fallbackProductId) {
-          const title =
-            product?.Name ||
-            product?.name ||
-            product?.Title ||
-            product?.title ||
-            "Product details";
+          const title = product?.Name || "Product details";
           titleEl.textContent = title;
           document.title = `${title} • Product details`;
 
-          const idValue =
-            product?.id ||
-            product?.productId ||
-            product?.productID ||
-            product?.Id ||
-            fallbackProductId ||
-            "";
+          const idValue = product?.id || fallbackProductId || "";
           if (idValue) {
             productIdEl.textContent = `Product ID: ${idValue}`;
             productIdEl.hidden = false;
@@ -605,12 +671,7 @@
             productIdEl.hidden = true;
           }
 
-          const description =
-            product?.Description ||
-            product?.description ||
-            product?.Summary ||
-            product?.summary ||
-            "";
+          const description = product?.Description || "";
 
           if (description) {
             descriptionEl.textContent = description;
@@ -833,22 +894,28 @@
               item.ID ??
               item.vintageProductId ??
               item.vintage_product_id;
-            if (idValue == null) {
+            const normalizedId = toTrimmedString(idValue).toLowerCase();
+            if (!normalizedId) {
               continue;
             }
-            monittaMap.set(String(idValue), item);
+            if (!monittaMap.has(normalizedId)) {
+              monittaMap.set(normalizedId, item);
+            }
           }
 
-          if (Array.isArray(vintageProducts)) {
-            for (const vintage of vintageProducts) {
-              const vintageId = resolveVintageProductId(vintage);
-              if (!vintageId) {
-                continue;
-              }
-              const match = monittaMap.get(String(vintageId));
-              if (match) {
-                matches.push({ vintage, item: match });
-              }
+          const normalizedVintageProducts = Array.isArray(vintageProducts)
+            ? vintageProducts.map((entry) => normalizeVintageProduct(entry)).filter(Boolean)
+            : [];
+
+          for (const vintage of normalizedVintageProducts) {
+            const vintageId = toTrimmedString(vintage?.VintageProductId).toLowerCase();
+            if (!vintageId) {
+              continue;
+            }
+
+            const match = monittaMap.get(vintageId);
+            if (match) {
+              matches.push({ vintage, item: match });
             }
           }
 
@@ -880,36 +947,6 @@
           }
 
           monittaListEl.appendChild(fragment);
-        }
-
-        function resolveVintageProductId(vintageProduct) {
-          if (!vintageProduct) {
-            return "";
-          }
-
-          if (
-            typeof vintageProduct === "string" ||
-            typeof vintageProduct === "number"
-          ) {
-            return String(vintageProduct);
-          }
-
-          const candidateKeys = [
-            "VintageProductId",
-            "vintageProductId",
-            "id",
-            "Id",
-            "productId",
-            "productID",
-          ];
-
-          for (const key of candidateKeys) {
-            if (key in vintageProduct && vintageProduct[key] != null) {
-              return String(vintageProduct[key]);
-            }
-          }
-
-          return "";
         }
 
         function createMonittaCard(vintageProduct, monittaItem) {
