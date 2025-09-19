@@ -666,20 +666,18 @@
         return monittaStoreItems;
       }
 
-      function buildProductImageUrl(value, options = {}) {
+      function buildProductImageUrl(value) {
         if (value == null) {
           return "";
         }
 
-        const skipSasToken = Boolean(options?.skipSas);
-
         if (value instanceof String) {
-          return buildProductImageUrl(value.valueOf(), options);
+          return buildProductImageUrl(value.valueOf());
         }
 
         if (Array.isArray(value)) {
           for (const candidate of value) {
-            const resolved = buildProductImageUrl(candidate, options);
+            const resolved = buildProductImageUrl(candidate);
             if (resolved) {
               return resolved;
             }
@@ -704,7 +702,7 @@
 
           for (const key of candidateKeys) {
             if (key in value) {
-              const resolved = buildProductImageUrl(value[key], options);
+              const resolved = buildProductImageUrl(value[key]);
               if (resolved) {
                 return resolved;
               }
@@ -712,7 +710,7 @@
           }
 
           if (value instanceof URL) {
-            return buildProductImageUrl(value.href, options);
+            return buildProductImageUrl(value.href);
           }
 
           return "";
@@ -749,7 +747,7 @@
               absoluteUrl.host === imageContainerHost &&
               absoluteUrl.pathname.startsWith(imageContainerUrl.pathname);
 
-            if (inImageContainer && !skipSasToken) {
+            if (inImageContainer) {
               appendImageSasParams(absoluteUrl);
               return absoluteUrl.toString();
             }
@@ -772,9 +770,7 @@
               azureUrl.pathname.startsWith(imageContainerUrl.pathname);
 
             if (inImageContainer) {
-              if (!skipSasToken) {
-                appendImageSasParams(azureUrl);
-              }
+              appendImageSasParams(azureUrl);
               return azureUrl.toString();
             }
           } catch (error) {
@@ -797,19 +793,14 @@
 
         try {
           const resolvedUrl = new URL(normalizedPath, imageContainerUrl);
-          if (!skipSasToken) {
-            appendImageSasParams(resolvedUrl);
-          }
+          appendImageSasParams(resolvedUrl);
           return resolvedUrl.toString();
         } catch (error) {
           const base = imageBaseUrl.endsWith("/")
             ? imageBaseUrl
             : `${imageBaseUrl}/`;
-          if (!skipSasToken && imageSasToken) {
-            const prefix = imageSasToken.startsWith("?") ? "" : "?";
-            return `${base}${normalizedPath}${prefix}${imageSasToken}`;
-          }
-          return `${base}${normalizedPath}`;
+          const prefix = imageSasToken.startsWith("?") ? "" : "?";
+          return `${base}${normalizedPath}${prefix}${imageSasToken}`;
         }
       }
 
@@ -905,7 +896,12 @@
           for (const key of candidateKeys) {
             if (key in value) {
               matched = true;
-              collectProductImageUrlsFromValue(value[key], addUrl, visited, options);
+              collectProductImageUrlsFromValue(
+                value[key],
+                addUrl,
+                visited,
+                options,
+              );
             }
           }
 
@@ -929,14 +925,34 @@
 
           for (const nested of Object.values(value)) {
             if (nested && typeof nested === "object") {
-              collectProductImageUrlsFromValue(nested, addUrl, visited, options);
+              collectProductImageUrlsFromValue(
+                nested,
+                addUrl,
+                visited,
+                options,
+              );
             }
           }
 
           return;
         }
 
-        const resolved = buildProductImageUrl(value, options);
+        if (options && options.useRawUrls) {
+          let rawValue;
+          try {
+            rawValue =
+              typeof value === "string" || value instanceof String
+                ? value
+                : String(value);
+          } catch (error) {
+            return;
+          }
+
+          addUrl(rawValue);
+          return;
+        }
+
+        const resolved = buildProductImageUrl(value);
         if (resolved) {
           addUrl(resolved);
         }
@@ -1008,7 +1024,7 @@
                 product[key],
                 addUrl,
                 undefined,
-                { skipSas: true },
+                { useRawUrls: true },
               );
             } else {
               collectProductImageUrlsFromValue(product[key], addUrl);
