@@ -755,6 +755,26 @@
             : "Zapisz";
         const savingLabel = "Zapisywanie…";
 
+        const redirectToProductPage = (id) => {
+          if (id == null) {
+            return;
+          }
+
+          const trimmedId = typeof id === "string" ? id.trim() : String(id).trim();
+          if (!trimmedId) {
+            return;
+          }
+
+          try {
+            const targetUrl = new URL("product.html", window.location.href);
+            targetUrl.searchParams.set("productID", trimmedId);
+            window.location.href = targetUrl.toString();
+          } catch (navigationError) {
+            console.error("Nie udało się utworzyć adresu przekierowania:", navigationError);
+            window.location.href = `product.html?productID=${encodeURIComponent(trimmedId)}`;
+          }
+        };
+
         const hasProductData = (product) =>
           !!(product && typeof product === "object" && Object.keys(product).length > 0);
 
@@ -3186,6 +3206,7 @@
                 if (refreshedProduct && typeof refreshedProduct === "object") {
                   assignProduct(refreshedProduct);
                   setStatus("Zmiany produktu oraz zdjęcia zostały zapisane.", "success");
+                  redirectToProductPage(productId);
                 } else {
                   setStatus(
                     "Zmiany produktu zostały zapisane, ale nie udało się odświeżyć danych po przesłaniu zdjęć.",
@@ -3201,6 +3222,7 @@
               }
             } else {
               setStatus("Zmiany produktu zostały zapisane.", "success");
+              redirectToProductPage(productId);
             }
           } catch (error) {
             console.error("Błąd podczas zapisywania produktu:", error);
