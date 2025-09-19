@@ -741,6 +741,74 @@
           error: null,
         };
 
+        const toTrimmedString = (value, fallback = "") => {
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+            return trimmed || fallback;
+          }
+
+          if (value == null) {
+            return fallback;
+          }
+
+          try {
+            const trimmed = String(value).trim();
+            return trimmed || fallback;
+          } catch (error) {
+            return fallback;
+          }
+        };
+
+        const normalizeVintageProduct = (entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+            return null;
+          }
+
+          const normalized = { ...entry };
+          normalized.VintageProductId = toTrimmedString(entry.VintageProductId);
+          normalized.VintageProductName = toTrimmedString(entry.VintageProductName);
+          normalized.VintageProductUrl = toTrimmedString(entry.VintageProductUrl);
+          return normalized;
+        };
+
+        const normalizeProduct = (rawProduct, fallbackId = "") => {
+          if (!rawProduct || typeof rawProduct !== "object") {
+            return null;
+          }
+
+          const normalized = { ...rawProduct };
+          const normalizedId = toTrimmedString(
+            rawProduct.id ?? rawProduct.Id ?? rawProduct.ID,
+            fallbackId,
+          );
+          normalized.id = normalizedId;
+          normalized.Name = toTrimmedString(rawProduct.Name);
+          normalized.Description = toTrimmedString(rawProduct.Description);
+
+          const imageEntries = Array.isArray(rawProduct.Images)
+            ? rawProduct.Images
+            : [];
+          const seenImages = new Set();
+          normalized.Images = imageEntries
+            .map((value) => toTrimmedString(value))
+            .filter((value) => {
+              if (!value || seenImages.has(value)) {
+                return false;
+              }
+              seenImages.add(value);
+              return true;
+            });
+
+          const vintageEntries = Array.isArray(rawProduct.VintageProducts)
+            ? rawProduct.VintageProducts
+            : [];
+          normalized.VintageProducts = vintageEntries
+            .map((entry) => normalizeVintageProduct(entry))
+            .filter(Boolean);
+
+          return normalized;
+        };
+
         const params = new URLSearchParams(window.location.search);
         const productId = params.get("productID") ?? params.get("id");
 
@@ -1419,9 +1487,14 @@
           for (const candidate of candidates) {
             const array = toArray(candidate);
             if (array.length > 0) {
-              return array.map((item) =>
-                typeof item === "object" && item !== null ? cloneProduct(item) : item
-              );
+              return array
+                .map((item) =>
+                  typeof item === "object" && item !== null
+                    ? normalizeVintageProduct(item)
+                    : null,
+                )
+                .filter(Boolean)
+                .map((entry) => cloneProduct(entry));
             }
           }
 
@@ -2958,7 +3031,8 @@
         };
 
         const assignProduct = (product) => {
-          currentProduct = cloneProduct(product);
+          const normalized = normalizeProduct(product, productId);
+          currentProduct = cloneProduct(normalized ?? product);
           populateForm(currentProduct);
 
           if (form) {
@@ -2986,7 +3060,12 @@
             throw new Error("Serwer zwrócił nieoczekiwany format danych.");
           }
 
-          return product;
+          const normalized = normalizeProduct(product, productId);
+          if (!normalized) {
+            throw new Error("Odebrano nieprawidłowe dane produktu.");
+          }
+
+          return normalized;
         };
 
         const buildUpdatePayload = () => {
@@ -3184,7 +3263,8 @@
             }
 
             if (updatedProduct && typeof updatedProduct === "object") {
-              assignProduct(updatedProduct);
+              const normalizedUpdate = normalizeProduct(updatedProduct, productId);
+              assignProduct(normalizedUpdate ?? updatedProduct);
             } else {
               try {
                 const refreshed = await fetchProductDetails();
@@ -3204,7 +3284,11 @@
                 const refreshedProduct = await uploadProductImages(productId, selectedFiles);
 
                 if (refreshedProduct && typeof refreshedProduct === "object") {
-                  assignProduct(refreshedProduct);
+                  const normalizedRefreshed = normalizeProduct(
+                    refreshedProduct,
+                    productId,
+                  );
+                  assignProduct(normalizedRefreshed ?? refreshedProduct);
                   setStatus("Zmiany produktu oraz zdjęcia zostały zapisane.", "success");
                   redirectToProductPage(productId);
                 } else {
