@@ -229,12 +229,8 @@
               throw new Error(`Żądanie nie powiodło się (status: ${response.status})`);
             }
 
-            const productDetails = await response.json();
-            const productId =
-              productDetails?.id ??
-              productDetails?.productId ??
-              productDetails?.productID ??
-              productDetails?.Id;
+            const { id } = await response.json();
+            const productId = typeof id === "string" ? id.trim() : "";
 
             if (!productId) {
               showMessage(
