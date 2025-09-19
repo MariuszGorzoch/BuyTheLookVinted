@@ -727,11 +727,6 @@
         const monittaEndpoint =
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/MonittaStore";
 
-        const blobImageBaseUrl =
-          "https://buythelookvintagestorage.blob.core.windows.net/uploads/";
-        const blobImageQuery =
-          "?sv=2024-11-04&ss=bfqt&srt=sco&sp=rl&se=2026-09-18T22:54:01Z&st=2025-09-18T14:39:01Z&spr=https&sig=roACoFS1yrHnyvMnUZWwy7w1VTfvQBL2jRCA9zGRdfA%3D";
-
         const monittaState = {
           isLoading: true,
           filter: "",
@@ -1589,40 +1584,34 @@
             return "";
           }
 
+          if (typeof File !== "undefined" && image instanceof File) {
+            const fileName = image.name && image.name.trim() ? image.name.trim() : "";
+            return fileName;
+          }
+
+          if (image instanceof String) {
+            return toImageStringForPayload(image.valueOf());
+          }
+
+          const urlCandidate = buildImageUrlFromEntry(image);
+          if (urlCandidate) {
+            return urlCandidate;
+          }
+
           if (
             typeof image === "string" ||
             typeof image === "number" ||
             typeof image === "bigint"
           ) {
-            const text = toDisplayString(image).trim();
-            if (!text) {
+            try {
+              const text = toDisplayString(image).trim();
+              return text;
+            } catch (error) {
               return "";
             }
-            const normalized = normalizeBlobFile(text);
-            return normalized || text;
-          }
-
-          if (typeof File !== "undefined" && image instanceof File) {
-            const fileName = image.name && image.name.trim() ? image.name.trim() : "";
-            if (!fileName) {
-              return "";
-            }
-            const normalized = normalizeBlobFile(fileName);
-            return normalized || fileName;
           }
 
           if (typeof image === "object") {
-            const fileCandidate = resolveImageFileCandidate(image);
-            if (fileCandidate) {
-              return fileCandidate;
-            }
-
-            const urlCandidate = resolveImageUrlCandidate(image);
-            if (urlCandidate) {
-              const normalizedUrl = normalizeBlobFile(urlCandidate);
-              return normalizedUrl || urlCandidate;
-            }
-
             const directCandidate = resolveField(
               image,
               [
@@ -1648,15 +1637,23 @@
             );
 
             if (directCandidate != null && directCandidate !== "") {
-              const text = toDisplayString(directCandidate).trim();
-              if (text) {
-                const normalized = normalizeBlobFile(text);
-                return normalized || text;
+              try {
+                const text = toDisplayString(directCandidate).trim();
+                if (text) {
+                  return text;
+                }
+              } catch (error) {
+                return "";
               }
             }
           }
 
-          return "";
+          try {
+            const text = toDisplayString(image).trim();
+            return text;
+          } catch (error) {
+            return "";
+          }
         };
 
         const gatherImagesForPayload = (...sources) => {
@@ -1976,43 +1973,107 @@
           return "";
         };
 
-        const resolveImageUrlCandidate = (image) => {
-          if (typeof image === "string") {
-            const text = toDisplayString(image).trim();
-            return isAbsoluteUrl(text) ? text : "";
-          }
-
-          if (image && typeof image === "object") {
-            const candidate = resolveField(
-              image,
-              ["url", "imageUrl", "src", "href", "link"],
-              ""
-            );
-            const text = candidate != null ? toDisplayString(candidate).trim() : "";
-            return isAbsoluteUrl(text) ? text : "";
-          }
-
-          return "";
-        };
-
         const buildImageUrlFromEntry = (image) => {
-          const absoluteUrl = resolveImageUrlCandidate(image);
-          const normalizedFromUrl = normalizeBlobFile(absoluteUrl);
-
-          if (normalizedFromUrl) {
-            return `${blobImageBaseUrl}${normalizedFromUrl}${blobImageQuery}`;
+          if (image == null) {
+            return "";
           }
 
-          const fileCandidate = resolveImageFileCandidate(image);
-          if (fileCandidate) {
-            return `${blobImageBaseUrl}${fileCandidate}${blobImageQuery}`;
+          if (image instanceof String) {
+            return buildImageUrlFromEntry(image.valueOf());
           }
 
-          if (absoluteUrl) {
-            return absoluteUrl;
+          if (image instanceof URL) {
+            return image.href;
           }
 
-          return "";
+          if (Array.isArray(image)) {
+            for (const candidate of image) {
+              const resolved = buildImageUrlFromEntry(candidate);
+              if (resolved) {
+                return resolved;
+              }
+            }
+            return "";
+          }
+
+          if (typeof image === "object") {
+            const candidateKeys = [
+              "url",
+              "URL",
+              "href",
+              "Href",
+              "link",
+              "Link",
+              "src",
+              "Src",
+              "imageUrl",
+              "ImageUrl",
+              "imageURL",
+              "ImageURL",
+              "image",
+              "Image",
+              "imageSrc",
+              "ImageSrc",
+              "thumbnailUrl",
+              "ThumbnailUrl",
+              "thumbnailURL",
+              "ThumbnailURL",
+              "thumbnail",
+              "Thumbnail",
+              "picture",
+              "Picture",
+              "pictureUrl",
+              "PictureUrl",
+              "pictureURL",
+              "PictureURL",
+              "photo",
+              "Photo",
+              "photoUrl",
+              "PhotoUrl",
+              "path",
+              "Path",
+              "value",
+              "Value",
+            ];
+
+            for (const key of candidateKeys) {
+              const candidateValue = resolveField(image, [key], null);
+              if (candidateValue != null && candidateValue !== "") {
+                const resolved = buildImageUrlFromEntry(candidateValue);
+                if (resolved) {
+                  return resolved;
+                }
+              }
+            }
+
+            return "";
+          }
+
+          let text;
+          try {
+            text = toDisplayString(image).trim();
+          } catch (error) {
+            return "";
+          }
+
+          if (!text) {
+            return "";
+          }
+
+          const sanitized = text.replace(/\\/g, "/");
+          if (/^https?:\/\//i.test(sanitized)) {
+            return sanitized;
+          }
+
+          if (sanitized.startsWith("//")) {
+            return `https:${sanitized}`;
+          }
+
+          if (/^(data|blob):/i.test(sanitized)) {
+            return sanitized;
+          }
+
+          return sanitized;
         };
 
         const findFirstImageUrl = (...sources) => {
