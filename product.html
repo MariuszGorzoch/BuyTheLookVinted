@@ -581,6 +581,72 @@
         }
       }
 
+      function toTrimmedString(value, fallback = "") {
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          return trimmed || fallback;
+        }
+
+        if (value == null) {
+          return fallback;
+        }
+
+        try {
+          const trimmed = String(value).trim();
+          return trimmed || fallback;
+        } catch (error) {
+          return fallback;
+        }
+      }
+
+      function normalizeVintageProduct(entry) {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          return null;
+        }
+
+        const normalized = { ...entry };
+        normalized.VintageProductId = toTrimmedString(entry.VintageProductId);
+        normalized.VintageProductName = toTrimmedString(entry.VintageProductName);
+        normalized.VintageProductUrl = toTrimmedString(entry.VintageProductUrl);
+        return normalized;
+      }
+
+      function normalizeProduct(rawProduct, fallbackId = "") {
+        if (!rawProduct || typeof rawProduct !== "object") {
+          return null;
+        }
+
+        const normalized = { ...rawProduct };
+        const normalizedId = toTrimmedString(
+          rawProduct.id ?? rawProduct.Id ?? rawProduct.ID,
+          fallbackId,
+        );
+        normalized.id = normalizedId;
+        normalized.Name = toTrimmedString(rawProduct.Name);
+        normalized.Description = toTrimmedString(rawProduct.Description);
+
+        const images = Array.isArray(rawProduct.Images) ? rawProduct.Images : [];
+        const seenImages = new Set();
+        normalized.Images = images
+          .map((entry) => toTrimmedString(entry))
+          .filter((entry) => {
+            if (!entry || seenImages.has(entry)) {
+              return false;
+            }
+            seenImages.add(entry);
+            return true;
+          });
+
+        const vintageSource = Array.isArray(rawProduct.VintageProducts)
+          ? rawProduct.VintageProducts
+          : [];
+        normalized.VintageProducts = vintageSource
+          .map((entry) => normalizeVintageProduct(entry))
+          .filter(Boolean);
+
+        return normalized;
+      }
+
       function extractMonittaStoreItems(payload, visited = new WeakSet()) {
         if (payload == null) {
           return [];
@@ -939,48 +1005,10 @@
           urls.push(trimmed);
         };
 
-        const primaryImage = resolveField(product, [
-          "imageUrl",
-          "image",
-          "imageSrc",
-          "imageURL",
-          "thumbnailUrl",
-          "thumbnail",
-          "picture",
-          "photo",
-        ]);
-        if (primaryImage) {
-          collectProductImageUrlsFromValue(primaryImage, addUrl);
-        }
-
-        const galleryFields = [
-          "images",
-          "imageUrls",
-          "image_urls",
-          "imageGallery",
-          "gallery",
-          "galleryImages",
-          "gallery_urls",
-          "photoUrls",
-          "photos",
-          "pictures",
-          "media",
-          "mediaUrls",
-          "mediaItems",
-          "attachments",
-          "thumbnails",
-          "additionalImages",
-          "extraImages",
-          "variants",
-          "variantsImages",
-          "variantsMedia",
-        ];
-
-        for (const key of galleryFields) {
-          if (key in product && product[key] != null && product[key] !== "") {
-            collectProductImageUrlsFromValue(product[key], addUrl);
-          }
-        }
+        const imageEntries = Array.isArray(product.Images) ? product.Images : [];
+        imageEntries.forEach((entry) => {
+          collectProductImageUrlsFromValue(entry, addUrl);
+        });
 
         return urls;
       }
@@ -1269,26 +1297,13 @@
           return [];
         }
 
-        const candidateKeys = [
-          "VintageProducts",
-          "vintageProducts",
-          "relatedProducts",
-        ];
+        const source = Array.isArray(product.VintageProducts)
+          ? product.VintageProducts
+          : [];
 
-        const result = [];
-
-        for (const key of candidateKeys) {
-          const value = product[key];
-          if (Array.isArray(value)) {
-            value.forEach((item) => {
-              if (item != null) {
-                result.push(item);
-              }
-            });
-          }
-        }
-
-        return result;
+        return source
+          .map((entry) => normalizeVintageProduct(entry))
+          .filter(Boolean);
       }
 
       function createVintageListItem(entry, index) {
@@ -1747,51 +1762,17 @@
         });
       }
 
-      function renderProductSummary(product, title) {
+      function renderProductSummary(product) {
         if (!productInfoSection || !productTitleElement || !productDescriptionElement) {
           return;
         }
 
         const hasProduct = product && typeof product === "object";
-        const trimmedTitle = typeof title === "string" ? title.trim() : "";
-        let descriptionText = "";
-
-        if (hasProduct) {
-          const descriptionValue = resolveField(
-            product,
-            [
-              "description",
-              "descriptionText",
-              "description_text",
-              "desc",
-              "details",
-              "productDetails",
-              "product_details",
-              "summary",
-              "productSummary",
-              "productDescription",
-              "descriptionHtml",
-              "descriptionHTML",
-              "htmlDescription",
-              "longDescription",
-              "long_description",
-              "shortDescription",
-              "short_description",
-              "itemDescription",
-              "item_description",
-              "story",
-              "productStory",
-              "notes",
-              "additionalInformation",
-              "additionalInfo",
-            ],
-            "",
-          );
-
-          descriptionText = normalizeText(descriptionValue);
-        }
-
-        const hasTitle = Boolean(trimmedTitle);
+        const titleText = hasProduct ? toTrimmedString(product.Name) : "";
+        const descriptionText = hasProduct
+          ? toTrimmedString(product.Description)
+          : "";
+        const hasTitle = Boolean(titleText);
         const hasDescription = Boolean(descriptionText);
 
         if (!hasTitle && !hasDescription) {
@@ -1805,7 +1786,7 @@
         }
 
         if (hasTitle) {
-          productTitleElement.textContent = trimmedTitle;
+          productTitleElement.textContent = titleText;
           productTitleElement.hidden = false;
         } else {
           productTitleElement.textContent = "";
@@ -1941,7 +1922,7 @@
         updateEditProductLink(productId);
         currentProductData = null;
         currentProductTitle = "";
-        renderProductSummary(null, "");
+        renderProductSummary(null);
         renderVintageProductsList(null);
 
         if (!productId) {
@@ -1964,27 +1945,26 @@
           }
 
           const payload = await response.json();
-          const product = extractProduct(payload);
+          const extracted = extractProduct(payload);
+          const product = normalizeProduct(extracted, productId);
 
           if (!product || typeof product !== "object") {
             currentProductData = null;
             currentProductTitle = "";
-            renderProductSummary(null, "");
+            renderProductSummary(null);
             renderVintageProductsList(null);
             statusElement.textContent = "No product details were returned for this identifier.";
             productCard.hidden = true;
             return;
           }
 
-          const title =
-            resolveField(product, ["name", "title", "productName", "label"], `Product ${productId}`) ||
-            `Product ${productId}`;
+          const title = product.Name || `Product ${productId}`;
           document.title = `${title} – Monitta Store`;
 
           currentProductTitle = title;
           currentProductData = product;
           updateEditProductLink(productId, title);
-          renderProductSummary(product, title);
+          renderProductSummary(product);
           renderVintageProductsList(product);
 
           const imageUrls = getProductImageUrls(product);
@@ -1997,7 +1977,7 @@
           console.error(error);
           currentProductData = null;
           currentProductTitle = "";
-          renderProductSummary(null, "");
+          renderProductSummary(null);
           renderVintageProductsList(null);
           statusElement.hidden = false;
           statusElement.textContent =
