@@ -288,10 +288,6 @@
             ? payload
             : Array.isArray(payload?.products)
             ? payload.products
-            : Array.isArray(payload?.items)
-            ? payload.items
-            : Array.isArray(payload?.data)
-            ? payload.data
             : [];
 
           if (!products.length) {
