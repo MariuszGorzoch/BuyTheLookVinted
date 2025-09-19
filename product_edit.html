@@ -38,6 +38,32 @@
         gap: 2rem;
       }
 
+      .top-actions {
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.15rem;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.12);
+        color: #4338ca;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+
+      .back-link:hover,
+      .back-link:focus {
+        background: rgba(99, 102, 241, 0.2);
+        color: #312e81;
+        transform: translateY(-1px);
+        outline: none;
+      }
+
       header {
         text-align: center;
       }
@@ -186,6 +212,7 @@
       }
 
       .image-grid figure {
+        position: relative;
         margin: 0;
         background: #ffffff;
         border-radius: 16px;
@@ -194,6 +221,35 @@
         flex-direction: column;
         gap: 0.5rem;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      }
+
+      .image-remove {
+        position: absolute;
+        inset: 0.35rem 0.35rem auto auto;
+        border: none;
+        border-radius: 999px;
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        background: rgba(239, 68, 68, 0.92);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      }
+
+      .image-remove:hover,
+      .image-remove:focus {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+        box-shadow: 0 8px 18px rgba(239, 68, 68, 0.35);
+        outline: none;
+      }
+
+      .image-remove:active {
+        transform: translateY(1px);
       }
 
       .image-grid img {
@@ -328,21 +384,27 @@
         gap: 0.5rem;
       }
 
-      .monitta-option__label {
+      .monitta-option__body {
         display: flex;
         align-items: flex-start;
         gap: 0.75rem;
-        cursor: pointer;
       }
 
-      .monitta-option__label input[type="checkbox"] {
-        margin-top: 0.2rem;
+      .monitta-option__image {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #eef2ff;
+        flex-shrink: 0;
       }
 
       .monitta-option__content {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       .monitta-option__title {
@@ -373,74 +435,37 @@
         text-decoration: underline;
       }
 
-      .monitta-selected {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .monitta-selected-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .monitta-selected-item {
+      .monitta-option__actions {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        border-radius: 16px;
-        background: #eef2ff;
-        border: 1px solid #c7d2fe;
-      }
-
-      .monitta-selected-content {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        min-width: 0;
-        flex: 1 1 220px;
-      }
-
-      .monitta-selected-title {
-        font-weight: 600;
-        color: #1f2937;
-      }
-
-      .monitta-selected-meta {
-        font-size: 0.85rem;
-        color: #4b5563;
-      }
-
-      .monitta-selected-actions {
-        display: flex;
-        align-items: center;
         gap: 0.5rem;
-        flex-wrap: wrap;
+        align-items: center;
       }
 
-      .monitta-selected-link {
-        padding: 0.35rem 0.9rem;
+      .monitta-add {
+        border: none;
         border-radius: 999px;
-        background: rgba(99, 102, 241, 0.12);
-        color: #4338ca;
-        text-decoration: none;
+        padding: 0.35rem 0.9rem;
+        background: linear-gradient(120deg, #16a34a, #22c55e);
+        color: #ffffff;
         font-weight: 600;
         font-size: 0.85rem;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
       }
 
-      .monitta-selected-link:hover,
-      .monitta-selected-link:focus {
-        background: rgba(99, 102, 241, 0.18);
+      .monitta-add:hover,
+      .monitta-add:focus {
+        filter: brightness(1.05);
         outline: none;
+        box-shadow: 0 10px 18px rgba(34, 197, 94, 0.2);
       }
 
-      .monitta-remove {
+      .monitta-add:active {
+        transform: translateY(1px);
+      }
+
+      .vintage-remove {
         border: none;
         border-radius: 999px;
         padding: 0.35rem 0.9rem;
@@ -452,14 +477,14 @@
         transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
       }
 
-      .monitta-remove:hover,
-      .monitta-remove:focus {
+      .vintage-remove:hover,
+      .vintage-remove:focus {
         filter: brightness(1.05);
         outline: none;
         box-shadow: 0 10px 18px rgba(99, 102, 241, 0.2);
       }
 
-      .monitta-remove:active {
+      .vintage-remove:active {
         transform: translateY(1px);
       }
 
@@ -478,7 +503,7 @@
           text-align: right;
         }
 
-        .monitta-selected-actions {
+        .monitta-option__actions {
           justify-content: flex-end;
         }
       }
@@ -498,6 +523,42 @@
         padding: 0.85rem 1rem;
         border: 1px solid #e5e7eb;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .vintage-item__body {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+      }
+
+      .vintage-item__image {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #f3f4f6;
+        flex-shrink: 0;
+      }
+
+      .vintage-item__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .vintage-item__content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .vintage-item__details {
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
@@ -547,6 +608,9 @@
   </head>
   <body>
     <main>
+      <div class="top-actions">
+        <a class="back-link" href="products.html">← Powrót do listy produktów</a>
+      </div>
       <header>
         <h1>Edycja produktu</h1>
         <p class="subtitle">
@@ -557,10 +621,6 @@
       <form id="product-form" hidden novalidate>
         <fieldset>
           <legend>Podstawowe informacje</legend>
-          <div class="field">
-            <label for="product-id">Identyfikator produktu</label>
-            <input type="text" id="product-id" name="product-id" readonly />
-          </div>
           <div class="field">
             <label for="product-name">Nazwa stylizacji</label>
             <input type="text" id="product-name" name="product-name" />
@@ -608,7 +668,8 @@
         <fieldset>
           <legend>Produkty MonittaStore</legend>
           <p class="hint">
-            Wybierz produkty Monitta Store, które chcesz powiązać z tą stylizacją.
+            Skorzystaj z listy produktów Monitta Store, aby dodać je do sekcji produktów
+            vintage.
           </p>
           <div class="monitta-controls">
             <label class="monitta-search" for="monitta-store-search">
@@ -621,7 +682,9 @@
                 autocomplete="off"
               />
             </label>
-            <span class="monitta-count" id="monitta-store-count" aria-live="polite">Wybrano: 0</span>
+            <span class="monitta-count" id="monitta-store-count" aria-live="polite"
+              >Dodano z Monitta: 0</span
+            >
           </div>
           <p class="monitta-status" id="monitta-store-status" role="status">
             Trwa przygotowywanie listy produktów Monitta Store…
@@ -634,14 +697,6 @@
           >
             <li class="placeholder">Lista produktów jest wczytywana…</li>
           </ul>
-          <div class="monitta-selected" id="monitta-store-selected">
-            <p class="placeholder">Nie wybrano produktów Monitta Store.</p>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Surowe dane z interfejsu API</legend>
-          <pre id="raw-json">Ładowanie…</pre>
         </fieldset>
 
         <div class="form-actions">
@@ -653,7 +708,6 @@
       (function () {
         const statusElement = document.getElementById("status");
         const form = document.getElementById("product-form");
-        const idInput = document.getElementById("product-id");
         const nameInput = document.getElementById("product-name");
         const descriptionInput = document.getElementById("product-description");
         const imagesContainer = document.getElementById("product-images");
@@ -662,10 +716,8 @@
         const vintageList = document.getElementById("vintage-products");
         const monittaStatusElement = document.getElementById("monitta-store-status");
         const monittaListElement = document.getElementById("monitta-store-list");
-        const monittaSelectedElement = document.getElementById("monitta-store-selected");
         const monittaSearchInput = document.getElementById("monitta-store-search");
         const monittaCountElement = document.getElementById("monitta-store-count");
-        const rawJson = document.getElementById("raw-json");
         const saveButton = document.getElementById("save-button");
 
         const apiBaseUrl =
@@ -674,6 +726,11 @@
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/upload";
         const monittaEndpoint =
           "https://vintagecrawlerappservice-hqb0f5bmfrdwf0g7.polandcentral-01.azurewebsites.net/MonittaStore";
+
+        const blobImageBaseUrl =
+          "https://buythelookvintagestorage.blob.core.windows.net/uploads/";
+        const blobImageQuery =
+          "?sv=2024-11-04&ss=bfqt&srt=sco&sp=rl&se=2026-09-18T22:54:01Z&st=2025-09-18T14:39:01Z&spr=https&sig=roACoFS1yrHnyvMnUZWwy7w1VTfvQBL2jRCA9zGRdfA%3D";
 
         const monittaState = {
           isLoading: true,
@@ -689,6 +746,8 @@
 
         let currentProduct = null;
         let isSaving = false;
+        let editableImages = [];
+        let editableVintageProducts = [];
 
         const defaultSaveLabel =
           saveButton && typeof saveButton.textContent === "string"
@@ -1075,7 +1134,7 @@
             return target;
           }
 
-          const fallbackId = (productId ?? idInput?.value ?? "").toString().trim();
+          const fallbackId = (productId ?? "").toString().trim();
           if (!fallbackId) {
             return target;
           }
@@ -1400,6 +1459,365 @@
           });
         };
 
+        const getMonittaEntryByIdentifier = (identifier) => {
+          if (identifier == null) {
+            return null;
+          }
+
+          const idText = toDisplayString(identifier).trim();
+          if (!idText) {
+            return null;
+          }
+
+          if (monittaState.selectedMap.has(idText)) {
+            return monittaState.selectedMap.get(idText);
+          }
+
+          if (monittaState.allProductsMap.has(idText)) {
+            return monittaState.allProductsMap.get(idText);
+          }
+
+          const normalized = idText.toLowerCase();
+
+          for (const [key, value] of monittaState.selectedMap.entries()) {
+            if (typeof key === "string" && key.toLowerCase() === normalized) {
+              return value;
+            }
+          }
+
+          for (const [key, value] of monittaState.allProductsMap.entries()) {
+            if (typeof key === "string" && key.toLowerCase() === normalized) {
+              return value;
+            }
+          }
+
+          return null;
+        };
+
+        const resolveMonittaImageUrl = (entry) => {
+          if (!entry) {
+            return "";
+          }
+
+          const sources = [];
+
+          if (entry && typeof entry === "object") {
+            if (entry.thumbnail != null) {
+              sources.push(entry.thumbnail);
+            }
+            if (entry.raw && typeof entry.raw === "object") {
+              sources.push(entry.raw);
+            }
+            sources.push(entry);
+          }
+
+          return findFirstImageUrl(...sources) || "";
+        };
+
+        const resolveVintageImageUrl = (item) => {
+          if (!item) {
+            return "";
+          }
+
+          const identifier = getVintageProductIdentifier(item);
+          if (identifier) {
+            const monittaEntry = getMonittaEntryByIdentifier(identifier);
+            if (monittaEntry) {
+              const fromMonitta = resolveMonittaImageUrl(monittaEntry);
+              if (fromMonitta) {
+                return fromMonitta;
+              }
+            }
+          }
+
+          const sources = [];
+
+          if (item && typeof item === "object") {
+            if (item.VintageProductImage != null) {
+              sources.push({ image: item.VintageProductImage });
+            }
+            if (item.vintageProductImage != null) {
+              sources.push({ image: item.vintageProductImage });
+            }
+            sources.push(item);
+          }
+
+          return findFirstImageUrl(...sources) || "";
+        };
+
+        const isAbsoluteUrl = (value) =>
+          typeof value === "string" && /^https?:\/\//i.test(value.trim());
+
+        const normalizeBlobFile = (value) => {
+          if (value == null) {
+            return "";
+          }
+
+          const text = toDisplayString(value).trim();
+          if (!text) {
+            return "";
+          }
+
+          const withoutQuery = text.split("?")[0];
+          const withoutPrefix = withoutQuery.replace(
+            /^https?:\/\/[^/]+\/uploads\//i,
+            ""
+          );
+
+          const normalized = withoutPrefix.replace(/^\/+/, "");
+          if (!normalized || /^https?:\/\//i.test(normalized)) {
+            return "";
+          }
+
+          return normalized;
+        };
+
+        const resolveImageFileCandidate = (image) => {
+          if (typeof image === "string") {
+            return normalizeBlobFile(image);
+          }
+
+          if (image && typeof image === "object") {
+            const candidate = resolveField(
+              image,
+              [
+                "fileName",
+                "file",
+                "filename",
+                "name",
+                "imageFile",
+                "image",
+                "path",
+                "blobName",
+                "blob",
+                "key",
+              ],
+              ""
+            );
+
+            if (candidate != null && candidate !== "") {
+              const normalized = normalizeBlobFile(candidate);
+              if (normalized) {
+                return normalized;
+              }
+            }
+
+            const urlCandidate = resolveField(
+              image,
+              ["url", "imageUrl", "src", "href", "link"],
+              ""
+            );
+
+            if (urlCandidate != null && urlCandidate !== "") {
+              const normalized = normalizeBlobFile(urlCandidate);
+              if (normalized) {
+                return normalized;
+              }
+            }
+          }
+
+          return "";
+        };
+
+        const resolveImageUrlCandidate = (image) => {
+          if (typeof image === "string") {
+            const text = toDisplayString(image).trim();
+            return isAbsoluteUrl(text) ? text : "";
+          }
+
+          if (image && typeof image === "object") {
+            const candidate = resolveField(
+              image,
+              ["url", "imageUrl", "src", "href", "link"],
+              ""
+            );
+            const text = candidate != null ? toDisplayString(candidate).trim() : "";
+            return isAbsoluteUrl(text) ? text : "";
+          }
+
+          return "";
+        };
+
+        const buildImageUrlFromEntry = (image) => {
+          const absoluteUrl = resolveImageUrlCandidate(image);
+          const normalizedFromUrl = normalizeBlobFile(absoluteUrl);
+
+          if (normalizedFromUrl) {
+            return `${blobImageBaseUrl}${normalizedFromUrl}${blobImageQuery}`;
+          }
+
+          const fileCandidate = resolveImageFileCandidate(image);
+          if (fileCandidate) {
+            return `${blobImageBaseUrl}${fileCandidate}${blobImageQuery}`;
+          }
+
+          if (absoluteUrl) {
+            return absoluteUrl;
+          }
+
+          return "";
+        };
+
+        const findFirstImageUrl = (...sources) => {
+          const queue = [];
+          const seen = new Set();
+
+          const enqueue = (value, context = false) => {
+            if (value == null) {
+              return;
+            }
+            queue.push({ value, context });
+          };
+
+          sources.forEach((source) => {
+            if (Array.isArray(source)) {
+              enqueue(source, typeof source === "string");
+            } else {
+              const initialContext = typeof source === "string";
+              enqueue(source, initialContext);
+            }
+          });
+
+          while (queue.length > 0) {
+            const { value, context } = queue.shift();
+
+            if (Array.isArray(value)) {
+              value.forEach((item) => enqueue(item, context));
+              continue;
+            }
+
+            if (typeof value === "string") {
+              if (!context) {
+                continue;
+              }
+              const trimmed = value.trim();
+              if (!trimmed) {
+                continue;
+              }
+              const url = buildImageUrlFromEntry(value);
+              if (url) {
+                return url;
+              }
+              continue;
+            }
+
+            if (typeof value !== "object") {
+              continue;
+            }
+
+            if (seen.has(value)) {
+              continue;
+            }
+            seen.add(value);
+
+            if (context) {
+              const url = buildImageUrlFromEntry(value);
+              if (url) {
+                return url;
+              }
+            }
+
+            Object.entries(value).forEach(([key, nested]) => {
+              if (nested == null) {
+                return;
+              }
+              const lowerKey = key.toLowerCase();
+              const nextContext =
+                context ||
+                lowerKey.includes("image") ||
+                lowerKey.includes("photo") ||
+                lowerKey.includes("thumb") ||
+                lowerKey.includes("picture") ||
+                lowerKey.includes("img");
+              enqueue(nested, nextContext);
+            });
+          }
+
+          return "";
+        };
+
+        const getImageAltText = (image, index) => {
+          if (image && typeof image === "object") {
+            const candidate = resolveField(
+              image,
+              ["alt", "description", "title", "name"],
+              ""
+            );
+            const text = candidate != null ? toDisplayString(candidate).trim() : "";
+            if (text) {
+              return text;
+            }
+          }
+
+          if (typeof image === "string") {
+            const text = toDisplayString(image).trim();
+            if (text && !isAbsoluteUrl(text)) {
+              return text;
+            }
+          }
+
+          const fileCandidate = resolveImageFileCandidate(image);
+          if (fileCandidate) {
+            return fileCandidate;
+          }
+
+          return `Zdjęcie ${index + 1}`;
+        };
+
+        const getProductImagesArray = (product) => {
+          if (!product || typeof product !== "object") {
+            return [];
+          }
+
+          const candidates = [product.images, product.image, product.photos];
+          for (const candidate of candidates) {
+            const array = toArray(candidate);
+            if (array.length > 0) {
+              return array.map((item) => cloneProduct(item));
+            }
+          }
+
+          return [];
+        };
+
+        const assignImagesToTarget = (target, images) => {
+          if (!target || typeof target !== "object") {
+            return;
+          }
+
+          const normalized = (Array.isArray(images) ? images : []).map((item) =>
+            cloneProduct(item)
+          );
+
+          ["images", "image", "photos"].forEach((key) => {
+            target[key] = normalized.map((item) => cloneProduct(item));
+          });
+        };
+
+        const setEditableImagesFromProduct = (product) => {
+          editableImages = getProductImagesArray(product);
+        };
+
+        const syncEditableImagesToProduct = () => {
+          if (!currentProduct) {
+            return;
+          }
+
+          assignImagesToTarget(currentProduct, editableImages);
+        };
+
+        const setEditableVintageFromProduct = (product) => {
+          editableVintageProducts = getExistingVintageProducts(product);
+        };
+
+        const syncEditableVintageToProduct = () => {
+          if (!currentProduct) {
+            return;
+          }
+
+          assignVintageProductsToTarget(currentProduct, editableVintageProducts);
+        };
+
         const setMonittaStatus = (message, type = "info") => {
           if (!monittaStatusElement) {
             return;
@@ -1428,7 +1846,7 @@
           }
 
           const count = monittaState.selectedMap.size;
-          monittaCountElement.textContent = `Wybrano: ${count}`;
+          monittaCountElement.textContent = `Dodano z Monitta: ${count}`;
         };
 
         const createMonittaPlaceholder = (message) => {
@@ -1473,12 +1891,17 @@
             return;
           }
 
-          const products = getFilteredMonittaProducts();
+          const products = getFilteredMonittaProducts().filter((entry) => {
+            if (!entry || typeof entry !== "object") {
+              return false;
+            }
+            return !monittaState.selectedMap.has(entry.id);
+          });
 
           if (products.length === 0) {
             const message = monittaState.filter
               ? "Brak produktów spełniających kryteria wyszukiwania."
-              : "Brak produktów Monitta Store do wyświetlenia.";
+              : "Brak produktów Monitta Store do dodania.";
             monittaListElement.appendChild(createMonittaPlaceholder(message));
             return;
           }
@@ -1489,15 +1912,6 @@
             const listItem = document.createElement("li");
             listItem.className = "monitta-option";
             listItem.dataset.monittaId = entry.id;
-
-            const label = document.createElement("label");
-            label.className = "monitta-option__label";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = entry.id;
-            checkbox.dataset.monittaId = entry.id;
-            checkbox.checked = monittaState.selectedMap.has(entry.id);
 
             const content = document.createElement("div");
             content.className = "monitta-option__content";
@@ -1525,9 +1939,35 @@
               content.appendChild(description);
             }
 
-            label.appendChild(checkbox);
-            label.appendChild(content);
-            listItem.appendChild(label);
+            const body = document.createElement("div");
+            body.className = "monitta-option__body";
+
+            const imageUrl = resolveMonittaImageUrl(entry);
+            if (imageUrl) {
+              const image = document.createElement("img");
+              image.className = "monitta-option__image";
+              image.src = imageUrl;
+              image.loading = "lazy";
+              image.decoding = "async";
+              const altTitle = toDisplayString(entry.title ?? "").trim();
+              image.alt = altTitle
+                ? `Zdjęcie ${altTitle}`
+                : "Zdjęcie produktu Monitta Store";
+              body.appendChild(image);
+            }
+
+            body.appendChild(content);
+            listItem.appendChild(body);
+
+            const actions = document.createElement("div");
+            actions.className = "monitta-option__actions";
+
+            const addButton = document.createElement("button");
+            addButton.type = "button";
+            addButton.className = "monitta-add";
+            addButton.dataset.monittaAdd = entry.id;
+            addButton.textContent = "Dodaj do vintage";
+            actions.appendChild(addButton);
 
             if (entry.url) {
               const link = document.createElement("a");
@@ -1536,94 +1976,15 @@
               link.rel = "noopener";
               link.className = "monitta-option__link";
               link.textContent = "Zobacz na Monitta Store";
-              listItem.appendChild(link);
+              actions.appendChild(link);
             }
+
+            listItem.appendChild(actions);
 
             fragment.appendChild(listItem);
           });
 
           monittaListElement.appendChild(fragment);
-        };
-
-        const renderMonittaSelected = () => {
-          if (!monittaSelectedElement) {
-            return;
-          }
-
-          monittaSelectedElement.innerHTML = "";
-          const selected = Array.from(monittaState.selectedMap.values());
-          if (selected.length === 0) {
-            const placeholder = document.createElement("p");
-            placeholder.className = "placeholder";
-            placeholder.textContent = "Nie wybrano produktów Monitta Store.";
-            monittaSelectedElement.appendChild(placeholder);
-            return;
-          }
-
-          selected.sort((a, b) => a.title.localeCompare(b.title, "pl", { sensitivity: "base" }));
-
-          const list = document.createElement("ul");
-          list.className = "monitta-selected-list";
-
-          selected.forEach((entry) => {
-            const item = document.createElement("li");
-            item.className = "monitta-selected-item";
-            item.dataset.monittaId = entry.id;
-
-            const content = document.createElement("div");
-            content.className = "monitta-selected-content";
-
-            const title = document.createElement("span");
-            title.className = "monitta-selected-title";
-            title.textContent = entry.title;
-            content.appendChild(title);
-
-            const metaPieces = [];
-            if (entry.priceText) {
-              metaPieces.push(entry.priceText);
-            }
-            if (entry.info) {
-              metaPieces.push(entry.info);
-            }
-
-            if (metaPieces.length > 0) {
-              const meta = document.createElement("span");
-              meta.className = "monitta-selected-meta";
-              meta.textContent = metaPieces.join(" · ");
-              content.appendChild(meta);
-            } else if (entry.description) {
-              const meta = document.createElement("span");
-              meta.className = "monitta-selected-meta";
-              meta.textContent = entry.description;
-              content.appendChild(meta);
-            }
-
-            const actions = document.createElement("div");
-            actions.className = "monitta-selected-actions";
-
-            if (entry.url) {
-              const link = document.createElement("a");
-              link.href = entry.url;
-              link.target = "_blank";
-              link.rel = "noopener";
-              link.className = "monitta-selected-link";
-              link.textContent = "Zobacz";
-              actions.appendChild(link);
-            }
-
-            const removeButton = document.createElement("button");
-            removeButton.type = "button";
-            removeButton.className = "monitta-remove";
-            removeButton.dataset.monittaRemove = entry.id;
-            removeButton.textContent = "Usuń";
-            actions.appendChild(removeButton);
-
-            item.appendChild(content);
-            item.appendChild(actions);
-            list.appendChild(item);
-          });
-
-          monittaSelectedElement.appendChild(list);
         };
 
         const getMonittaPayload = () => {
@@ -1750,8 +2111,11 @@
             }
           });
 
-          renderMonittaSelected();
           updateMonittaSelectionInProduct();
+          if (currentProduct) {
+            setEditableVintageFromProduct(currentProduct);
+            renderVintageProducts();
+          }
           updateMonittaCount();
           renderMonittaList();
         };
@@ -1814,8 +2178,11 @@
             monittaState.isLoading = false;
             monittaListElement.setAttribute("aria-busy", "false");
             renderMonittaList();
-            renderMonittaSelected();
             updateMonittaSelectionInProduct();
+            if (currentProduct) {
+              setEditableVintageFromProduct(currentProduct);
+              renderVintageProducts();
+            }
             updateMonittaCount();
           }
         };
@@ -1859,41 +2226,52 @@
           return imageFiles;
         };
 
-        const renderImages = (product) => {
+        const renderImages = () => {
           if (!imagesContainer) {
             return;
           }
 
-          const images = toArray(product?.images ?? product?.image ?? product?.photos);
           imagesContainer.innerHTML = "";
 
-          let rendered = 0;
-          images.forEach((image, index) => {
-            const url =
-              typeof image === "string"
-                ? image
-                : resolveField(image, ["url", "imageUrl", "src", "href", "link"]);
+          if (!Array.isArray(editableImages) || editableImages.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "placeholder";
+            empty.textContent = "Brak zdjęć do wyświetlenia.";
+            imagesContainer.appendChild(empty);
+            return;
+          }
 
+          let rendered = 0;
+
+          editableImages.forEach((image, index) => {
+            const url = buildImageUrlFromEntry(image);
             if (!url) {
               return;
             }
 
-            const altText =
-              typeof image === "object" && image !== null
-                ? resolveField(image, ["alt", "description", "title"], `Zdjęcie ${index + 1}`)
-                : `Zdjęcie ${index + 1}`;
+            const altText = getImageAltText(image, index);
 
             const figure = document.createElement("figure");
-            const img = document.createElement("img");
-            const caption = document.createElement("figcaption");
+            figure.dataset.imageIndex = String(index);
 
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "image-remove";
+            removeButton.dataset.imageIndex = String(index);
+            removeButton.setAttribute("aria-label", `Usuń zdjęcie ${index + 1}`);
+            removeButton.textContent = "X";
+            figure.appendChild(removeButton);
+
+            const img = document.createElement("img");
             img.src = url;
             img.loading = "lazy";
             img.alt = altText;
-            caption.textContent = altText;
-
             figure.appendChild(img);
+
+            const caption = document.createElement("figcaption");
+            caption.textContent = altText;
             figure.appendChild(caption);
+
             imagesContainer.appendChild(figure);
             rendered += 1;
           });
@@ -1904,6 +2282,26 @@
             empty.textContent = "Brak zdjęć do wyświetlenia.";
             imagesContainer.appendChild(empty);
           }
+        };
+
+        const removeImageAtIndex = (index) => {
+          if (!Array.isArray(editableImages)) {
+            return;
+          }
+
+          const normalizedIndex = Number(index);
+          if (
+            Number.isNaN(normalizedIndex) ||
+            normalizedIndex < 0 ||
+            normalizedIndex >= editableImages.length
+          ) {
+            return;
+          }
+
+          editableImages.splice(normalizedIndex, 1);
+          syncEditableImagesToProduct();
+          renderImages();
+          updateSaveButtonState();
         };
 
         const renderSelectedImages = (fileList) => {
@@ -1977,6 +2375,26 @@
 
         renderSelectedImages(newImagesInput?.files ?? []);
 
+        if (imagesContainer) {
+          imagesContainer.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!target || !(target instanceof HTMLElement)) {
+              return;
+            }
+
+            if (!target.matches("button[data-image-index]")) {
+              return;
+            }
+
+            const { imageIndex } = target.dataset;
+            if (typeof imageIndex === "undefined") {
+              return;
+            }
+
+            removeImageAtIndex(imageIndex);
+          });
+        }
+
         if (newImagesInput) {
           newImagesInput.addEventListener("change", () => {
             renderSelectedImages(newImagesInput.files);
@@ -1991,101 +2409,53 @@
         }
 
         if (monittaListElement) {
-          monittaListElement.addEventListener("change", (event) => {
-            const target = event.target;
-            if (!target || !(target instanceof HTMLInputElement)) {
-              return;
-            }
-            if (!target.matches('input[type="checkbox"][data-monitta-id]')) {
-              return;
-            }
-
-            const identifier = target.dataset.monittaId;
-            if (!identifier) {
-              return;
-            }
-
-            if (target.checked) {
-              const datasetEntry = monittaState.allProductsMap.get(identifier);
-              if (datasetEntry) {
-                const entry = duplicateMonittaEntry(
-                  datasetEntry,
-                  monittaState.selectedMap.get(identifier) ?? null
-                );
-                if (entry) {
-                  monittaState.selectedMap.set(identifier, entry);
-                }
-              } else {
-                const fallbackEntry = createMonittaEntry({ id: identifier });
-                if (fallbackEntry) {
-                  const entry = duplicateMonittaEntry(
-                    fallbackEntry,
-                    monittaState.selectedMap.get(identifier) ?? null
-                  );
-                  if (entry) {
-                    monittaState.selectedMap.set(identifier, entry);
-                  }
-                }
-              }
-            } else {
-              monittaState.selectedMap.delete(identifier);
-            }
-
-            renderMonittaSelected();
-            updateMonittaSelectionInProduct();
-            updateMonittaCount();
-          });
-        }
-
-        if (monittaSelectedElement) {
-          monittaSelectedElement.addEventListener("click", (event) => {
+          monittaListElement.addEventListener("click", (event) => {
             const target = event.target;
             if (!target || !(target instanceof HTMLElement)) {
               return;
             }
 
-            if (!target.matches("button[data-monitta-remove]")) {
+            if (!target.matches("button[data-monitta-add]")) {
               return;
             }
 
-            const identifier = target.dataset.monittaRemove;
+            const identifier = target.dataset.monittaAdd;
             if (!identifier) {
               return;
             }
 
-            monittaState.selectedMap.delete(identifier);
-
-            if (monittaListElement) {
-              const checkboxes = monittaListElement.querySelectorAll(
-                'input[type="checkbox"][data-monitta-id]'
-              );
-              checkboxes.forEach((checkbox) => {
-                if (
-                  checkbox instanceof HTMLInputElement &&
-                  checkbox.dataset.monittaId === identifier
-                ) {
-                  checkbox.checked = false;
-                }
-              });
-            }
-
-            renderMonittaSelected();
-            updateMonittaSelectionInProduct();
-            updateMonittaCount();
+            addMonittaProductToVintage(identifier);
           });
         }
 
-        const renderVintageProducts = (product) => {
+        if (vintageList) {
+          vintageList.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!target || !(target instanceof HTMLElement)) {
+              return;
+            }
+
+            if (!target.matches("button[data-vintage-remove]")) {
+              return;
+            }
+
+            const { vintageRemove } = target.dataset;
+            if (typeof vintageRemove === "undefined") {
+              return;
+            }
+
+            removeVintageProductAtIndex(vintageRemove);
+          });
+        }
+
+        const renderVintageProducts = () => {
           if (!vintageList) {
             return;
           }
 
-          const vintageProducts = toArray(
-            product?.VintageProducts ?? product?.vintageProducts ?? product?.relatedProducts
-          );
           vintageList.innerHTML = "";
 
-          if (vintageProducts.length === 0) {
+          if (!Array.isArray(editableVintageProducts) || editableVintageProducts.length === 0) {
             const empty = document.createElement("li");
             empty.className = "placeholder";
             empty.textContent = "Brak powiązanych produktów vintage.";
@@ -2093,75 +2463,176 @@
             return;
           }
 
-          vintageProducts.forEach((item, index) => {
+          editableVintageProducts.forEach((item, index) => {
             const listItem = document.createElement("li");
             listItem.className = "vintage-item";
+            listItem.dataset.vintageIndex = String(index);
 
-            if (item && typeof item === "object") {
-              const title = resolveField(
-                item,
-                [
-                  "name",
-                  "title",
-                  "productName",
-                  "label",
-                  "VintageProductName",
-                  "vintageProductName",
-                ],
-                `Produkt ${index + 1}`
-              );
-              const url = resolveField(item, [
-                "url",
-                "link",
-                "productUrl",
-                "href",
-                "VintageProductUrl",
-                "vintageProductUrl",
-              ]);
-              const price = resolveField(item, ["price", "amount", "value"]);
-              const currency = resolveField(item, ["currency", "currencyCode", "priceCurrency"], "");
-              const description = resolveField(item, ["description", "summary", "details"]);
+            const header = document.createElement("div");
+            header.className = "vintage-item__header";
 
-              if (url) {
-                const anchor = document.createElement("a");
-                anchor.href = url;
-                anchor.target = "_blank";
-                anchor.rel = "noopener";
-                anchor.textContent = title;
-                listItem.appendChild(anchor);
-              } else {
-                const nameElement = document.createElement("strong");
-                nameElement.textContent = title;
-                listItem.appendChild(nameElement);
-              }
+            const titleValue = resolveField(
+              item,
+              [
+                "name",
+                "title",
+                "productName",
+                "label",
+                "VintageProductName",
+                "vintageProductName",
+              ],
+              `Produkt ${index + 1}`
+            );
+            const titleText = toDisplayString(titleValue);
+            const url = resolveField(item, [
+              "url",
+              "link",
+              "productUrl",
+              "href",
+              "VintageProductUrl",
+              "vintageProductUrl",
+            ]);
 
-              if (price) {
-                const priceElement = document.createElement("small");
-                priceElement.textContent = currency ? `${price} ${currency}` : `${price}`;
-                listItem.appendChild(priceElement);
-              }
-
-              if (description) {
-                const descriptionElement = document.createElement("p");
-                descriptionElement.textContent = description;
-                descriptionElement.style.margin = "0";
-                descriptionElement.style.color = "#4b5563";
-                listItem.appendChild(descriptionElement);
-              }
+            if (url) {
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.target = "_blank";
+              anchor.rel = "noopener";
+              anchor.textContent = titleText;
+              header.appendChild(anchor);
             } else {
-              listItem.textContent = String(item);
+              const nameElement = document.createElement("strong");
+              nameElement.textContent = titleText;
+              header.appendChild(nameElement);
             }
+
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "vintage-remove";
+            removeButton.dataset.vintageRemove = String(index);
+            removeButton.textContent = "Usuń";
+            header.appendChild(removeButton);
+
+            const price = resolveField(item, ["price", "amount", "value"]);
+            const currency = resolveField(
+              item,
+              ["currency", "currencyCode", "priceCurrency"],
+              ""
+            );
+            const description = resolveField(item, ["description", "summary", "details"]);
+
+            const body = document.createElement("div");
+            body.className = "vintage-item__body";
+
+            const imageUrl = resolveVintageImageUrl(item);
+            if (imageUrl) {
+              const image = document.createElement("img");
+              image.className = "vintage-item__image";
+              image.src = imageUrl;
+              image.loading = "lazy";
+              image.decoding = "async";
+              const altTitle = toDisplayString(titleText ?? "").trim();
+              image.alt = altTitle
+                ? `Zdjęcie ${altTitle}`
+                : "Zdjęcie produktu vintage";
+              body.appendChild(image);
+            }
+
+            const textWrapper = document.createElement("div");
+            textWrapper.className = "vintage-item__content";
+            textWrapper.appendChild(header);
+
+            const details = document.createElement("div");
+            details.className = "vintage-item__details";
+
+            if (price) {
+              const priceElement = document.createElement("small");
+              priceElement.textContent = currency ? `${price} ${currency}` : `${price}`;
+              details.appendChild(priceElement);
+            }
+
+            if (description) {
+              const descriptionElement = document.createElement("p");
+              descriptionElement.textContent = description;
+              descriptionElement.style.margin = "0";
+              descriptionElement.style.color = "#4b5563";
+              details.appendChild(descriptionElement);
+            }
+
+            if (details.children.length > 0) {
+              textWrapper.appendChild(details);
+            }
+
+            body.appendChild(textWrapper);
+            listItem.appendChild(body);
 
             vintageList.appendChild(listItem);
           });
         };
 
+        const removeVintageProductAtIndex = (index) => {
+          if (!Array.isArray(editableVintageProducts)) {
+            return;
+          }
+
+          const normalizedIndex = Number(index);
+          if (
+            Number.isNaN(normalizedIndex) ||
+            normalizedIndex < 0 ||
+            normalizedIndex >= editableVintageProducts.length
+          ) {
+            return;
+          }
+
+          const [removed] = editableVintageProducts.splice(normalizedIndex, 1);
+          syncEditableVintageToProduct();
+
+          const identifier = getVintageProductIdentifier(removed);
+          if (identifier) {
+            monittaState.selectedMap.delete(identifier);
+          }
+
+          updateMonittaSelectionInProduct();
+          setEditableVintageFromProduct(currentProduct);
+          renderVintageProducts();
+          renderMonittaList();
+          updateMonittaCount();
+          updateSaveButtonState();
+        };
+
+        const addMonittaProductToVintage = (identifier) => {
+          if (!identifier || !currentProduct) {
+            return;
+          }
+
+          if (monittaState.selectedMap.has(identifier)) {
+            return;
+          }
+
+          const datasetEntry = monittaState.allProductsMap.get(identifier);
+          const fallbackEntry = datasetEntry ?? createMonittaEntry({ id: identifier });
+          if (!fallbackEntry) {
+            return;
+          }
+
+          const existing = monittaState.selectedMap.get(identifier) ?? null;
+          const entry = duplicateMonittaEntry(fallbackEntry, existing);
+          if (!entry) {
+            return;
+          }
+
+          monittaState.selectedMap.set(identifier, entry);
+          syncEditableVintageToProduct();
+          updateMonittaSelectionInProduct();
+          setEditableVintageFromProduct(currentProduct);
+          renderVintageProducts();
+          renderMonittaList();
+          updateMonittaCount();
+          updateSaveButtonState();
+        };
+
         const populateForm = (product) => {
           const safeProduct = product && typeof product === "object" ? product : {};
-
-          if (idInput) {
-            idInput.value = productId ?? "";
-          }
 
           const resolvedName = resolveField(
             safeProduct,
@@ -2181,16 +2652,11 @@
             descriptionInput.value = toDisplayString(resolvedDescription);
           }
 
-          renderImages(safeProduct);
-          renderVintageProducts(safeProduct);
+          setEditableImagesFromProduct(safeProduct);
+          renderImages();
+          setEditableVintageFromProduct(safeProduct);
+          renderVintageProducts();
           setMonittaSelectedFromProduct(safeProduct);
-
-          if (rawJson) {
-            const hasContent = hasProductData(safeProduct);
-            rawJson.textContent = hasContent
-              ? JSON.stringify(safeProduct, null, 2)
-              : "Brak danych";
-          }
 
           if (newImagesInput) {
             newImagesInput.value = "";
@@ -2241,6 +2707,8 @@
           }
 
           const payload = cloneProduct(currentProduct);
+          assignImagesToTarget(payload, editableImages);
+          assignVintageProductsToTarget(payload, editableVintageProducts);
           const sanitizedName = nameInput ? nameInput.value.trim() : "";
           const sanitizedDescription = descriptionInput ? descriptionInput.value.trim() : "";
 
@@ -2438,12 +2906,11 @@
             currentProduct = null;
             updateSaveButtonState();
 
-            renderImages({});
-            renderVintageProducts({});
+            editableImages = [];
+            renderImages();
+            editableVintageProducts = [];
+            renderVintageProducts();
             setMonittaSelectedFromProduct({});
-            if (rawJson) {
-              rawJson.textContent = "Brak danych";
-            }
             if (newImagesInput) {
               newImagesInput.value = "";
             }
@@ -2465,11 +2932,10 @@
               "error"
             );
 
-            if (rawJson) {
-              rawJson.textContent = "Brak danych";
-            }
-            renderImages({});
-            renderVintageProducts({});
+            editableImages = [];
+            renderImages();
+            editableVintageProducts = [];
+            renderVintageProducts();
             setMonittaSelectedFromProduct({});
             if (newImagesInput) {
               newImagesInput.value = "";
@@ -2490,7 +2956,6 @@
         }
 
         renderMonittaList();
-        renderMonittaSelected();
         updateMonittaCount();
         loadMonittaProducts();
 
