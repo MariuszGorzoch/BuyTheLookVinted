@@ -804,13 +804,23 @@
         }
       }
 
-      function collectProductImageUrlsFromValue(value, addUrl, visited = new Set()) {
+      function collectProductImageUrlsFromValue(
+        value,
+        addUrl,
+        visited = new Set(),
+        options = {},
+      ) {
         if (value == null) {
           return;
         }
 
         if (value instanceof String) {
-          collectProductImageUrlsFromValue(value.valueOf(), addUrl, visited);
+          collectProductImageUrlsFromValue(
+            value.valueOf(),
+            addUrl,
+            visited,
+            options,
+          );
           return;
         }
 
@@ -821,7 +831,7 @@
 
         if (Array.isArray(value)) {
           for (const item of value) {
-            collectProductImageUrlsFromValue(item, addUrl, visited);
+            collectProductImageUrlsFromValue(item, addUrl, visited, options);
           }
           return;
         }
@@ -886,7 +896,12 @@
           for (const key of candidateKeys) {
             if (key in value) {
               matched = true;
-              collectProductImageUrlsFromValue(value[key], addUrl, visited);
+              collectProductImageUrlsFromValue(
+                value[key],
+                addUrl,
+                visited,
+                options,
+              );
             }
           }
 
@@ -897,7 +912,12 @@
           if (Number.isInteger(value.length) && value.length > 0) {
             for (let index = 0; index < value.length; index += 1) {
               if (index in value) {
-                collectProductImageUrlsFromValue(value[index], addUrl, visited);
+                collectProductImageUrlsFromValue(
+                  value[index],
+                  addUrl,
+                  visited,
+                  options,
+                );
               }
             }
             return;
@@ -905,10 +925,30 @@
 
           for (const nested of Object.values(value)) {
             if (nested && typeof nested === "object") {
-              collectProductImageUrlsFromValue(nested, addUrl, visited);
+              collectProductImageUrlsFromValue(
+                nested,
+                addUrl,
+                visited,
+                options,
+              );
             }
           }
 
+          return;
+        }
+
+        if (options && options.useRawUrls) {
+          let rawValue;
+          try {
+            rawValue =
+              typeof value === "string" || value instanceof String
+                ? value
+                : String(value);
+          } catch (error) {
+            return;
+          }
+
+          addUrl(rawValue);
           return;
         }
 
@@ -955,6 +995,7 @@
 
         const galleryFields = [
           "images",
+          "Images",
           "imageUrls",
           "image_urls",
           "imageGallery",
@@ -978,7 +1019,16 @@
 
         for (const key of galleryFields) {
           if (key in product && product[key] != null && product[key] !== "") {
-            collectProductImageUrlsFromValue(product[key], addUrl);
+            if (typeof key === "string" && key.toLowerCase() === "images") {
+              collectProductImageUrlsFromValue(
+                product[key],
+                addUrl,
+                undefined,
+                { useRawUrls: true },
+              );
+            } else {
+              collectProductImageUrlsFromValue(product[key], addUrl);
+            }
           }
         }
 
