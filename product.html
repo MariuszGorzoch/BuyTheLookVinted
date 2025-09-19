@@ -109,6 +109,43 @@
         align-items: stretch;
       }
 
+      .product-overview {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(1.25rem, 3vw, 1.85rem);
+        min-height: 100%;
+      }
+
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: clamp(1rem, 2.5vw, 1.35rem);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(14, 165, 233, 0.1));
+        box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.14);
+      }
+
+      .product-info__title {
+        margin: 0;
+        font-size: clamp(1.65rem, 3vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #0f172a;
+      }
+
+      .product-info__description {
+        margin: 0;
+        color: #334155;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      .product-info__description--empty {
+        color: #64748b;
+        font-style: italic;
+      }
+
       .product-vintage {
         display: flex;
         flex-direction: column;
@@ -118,6 +155,7 @@
         padding: clamp(1rem, 2.2vw, 1.25rem);
         box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.12);
         min-height: 100%;
+        flex: 1 1 auto;
       }
 
       .product-vintage__heading {
@@ -411,7 +449,7 @@
           grid-template-columns: minmax(0, 1fr);
         }
 
-        .product-vintage {
+        .product-overview {
           order: -1;
         }
 
@@ -446,16 +484,22 @@
 
       <article id="product-card" hidden>
         <div class="product-card__layout">
-          <section
-            class="product-vintage"
-            id="product-vintage-section"
-            hidden
-            aria-label="Related vintage products"
-          >
-            <h2 class="product-vintage__heading">Vintage products</h2>
-            <p class="product-vintage__empty" id="product-vintage-empty" hidden></p>
-            <ul class="product-vintage__list" id="product-vintage-list" hidden></ul>
-          </section>
+          <div class="product-overview">
+            <section class="product-info" id="product-info" hidden>
+              <h1 class="product-info__title" id="product-title" hidden></h1>
+              <p class="product-info__description" id="product-description" hidden></p>
+            </section>
+            <section
+              class="product-vintage"
+              id="product-vintage-section"
+              hidden
+              aria-label="Related vintage products"
+            >
+              <h2 class="product-vintage__heading">Vintage products</h2>
+              <p class="product-vintage__empty" id="product-vintage-empty" hidden></p>
+              <ul class="product-vintage__list" id="product-vintage-list" hidden></ul>
+            </section>
+          </div>
           <div class="product-media" id="product-media">
             <div class="product-carousel" id="product-carousel" hidden>
               <button
@@ -969,6 +1013,80 @@
         }
       }
 
+      function normalizeText(value, visited = new WeakSet()) {
+        if (value == null) {
+          return "";
+        }
+
+        if (typeof value === "string") {
+          return value.trim();
+        }
+
+        if (typeof value === "number" || typeof value === "bigint") {
+          return String(value);
+        }
+
+        if (typeof value === "boolean") {
+          return value ? "true" : "false";
+        }
+
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+
+        if (Array.isArray(value)) {
+          if (visited.has(value)) {
+            return "";
+          }
+          visited.add(value);
+          const parts = [];
+          for (const entry of value) {
+            const normalized = normalizeText(entry, visited);
+            if (normalized) {
+              parts.push(normalized);
+            }
+          }
+          return parts.join(" ").trim();
+        }
+
+        if (typeof value === "object") {
+          if (visited.has(value)) {
+            return "";
+          }
+          visited.add(value);
+
+          const candidateKeys = [
+            "description",
+            "text",
+            "value",
+            "content",
+            "summary",
+            "details",
+            "body",
+            "caption",
+            "label",
+          ];
+
+          for (const key of candidateKeys) {
+            if (key in value) {
+              const normalized = normalizeText(value[key], visited);
+              if (normalized) {
+                return normalized;
+              }
+            }
+          }
+
+          for (const nested of Object.values(value)) {
+            const normalized = normalizeText(nested, visited);
+            if (normalized) {
+              return normalized;
+            }
+          }
+        }
+
+        return "";
+      }
+
       function gatherMonittaIdentifiers(item) {
         const identifiers = new Set();
 
@@ -1397,6 +1515,9 @@
       const defaultEditProductLabel = "Edit this product";
       const statusElement = document.getElementById("status");
       const productCard = document.getElementById("product-card");
+      const productInfoSection = document.getElementById("product-info");
+      const productTitleElement = document.getElementById("product-title");
+      const productDescriptionElement = document.getElementById("product-description");
       const vintageSection = document.getElementById("product-vintage-section");
       const vintageListElement = document.getElementById("product-vintage-list");
       const vintageEmptyElement = document.getElementById("product-vintage-empty");
@@ -1626,6 +1747,84 @@
         });
       }
 
+      function renderProductSummary(product, title) {
+        if (!productInfoSection || !productTitleElement || !productDescriptionElement) {
+          return;
+        }
+
+        const hasProduct = product && typeof product === "object";
+        const trimmedTitle = typeof title === "string" ? title.trim() : "";
+        let descriptionText = "";
+
+        if (hasProduct) {
+          const descriptionValue = resolveField(
+            product,
+            [
+              "description",
+              "descriptionText",
+              "description_text",
+              "desc",
+              "details",
+              "productDetails",
+              "product_details",
+              "summary",
+              "productSummary",
+              "productDescription",
+              "descriptionHtml",
+              "descriptionHTML",
+              "htmlDescription",
+              "longDescription",
+              "long_description",
+              "shortDescription",
+              "short_description",
+              "itemDescription",
+              "item_description",
+              "story",
+              "productStory",
+              "notes",
+              "additionalInformation",
+              "additionalInfo",
+            ],
+            "",
+          );
+
+          descriptionText = normalizeText(descriptionValue);
+        }
+
+        const hasTitle = Boolean(trimmedTitle);
+        const hasDescription = Boolean(descriptionText);
+
+        if (!hasTitle && !hasDescription) {
+          productInfoSection.hidden = true;
+          productTitleElement.textContent = "";
+          productTitleElement.hidden = true;
+          productDescriptionElement.textContent = "";
+          productDescriptionElement.hidden = true;
+          productDescriptionElement.classList.remove("product-info__description--empty");
+          return;
+        }
+
+        if (hasTitle) {
+          productTitleElement.textContent = trimmedTitle;
+          productTitleElement.hidden = false;
+        } else {
+          productTitleElement.textContent = "";
+          productTitleElement.hidden = true;
+        }
+
+        if (hasDescription) {
+          productDescriptionElement.textContent = descriptionText;
+          productDescriptionElement.hidden = false;
+          productDescriptionElement.classList.remove("product-info__description--empty");
+        } else {
+          productDescriptionElement.textContent = "No description is available for this listing.";
+          productDescriptionElement.hidden = false;
+          productDescriptionElement.classList.add("product-info__description--empty");
+        }
+
+        productInfoSection.hidden = false;
+      }
+
       function getProductIdFromQuery() {
         const params = new URLSearchParams(window.location.search);
         const keys = ["productID", "productId", "id"];
@@ -1742,6 +1941,7 @@
         updateEditProductLink(productId);
         currentProductData = null;
         currentProductTitle = "";
+        renderProductSummary(null, "");
         renderVintageProductsList(null);
 
         if (!productId) {
@@ -1769,6 +1969,7 @@
           if (!product || typeof product !== "object") {
             currentProductData = null;
             currentProductTitle = "";
+            renderProductSummary(null, "");
             renderVintageProductsList(null);
             statusElement.textContent = "No product details were returned for this identifier.";
             productCard.hidden = true;
@@ -1783,6 +1984,7 @@
           currentProductTitle = title;
           currentProductData = product;
           updateEditProductLink(productId, title);
+          renderProductSummary(product, title);
           renderVintageProductsList(product);
 
           const imageUrls = getProductImageUrls(product);
@@ -1795,6 +1997,7 @@
           console.error(error);
           currentProductData = null;
           currentProductTitle = "";
+          renderProductSummary(null, "");
           renderVintageProductsList(null);
           statusElement.hidden = false;
           statusElement.textContent =
