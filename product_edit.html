@@ -829,9 +829,33 @@
             return fallback;
           }
 
-          for (const key of candidates) {
+          const keysToCheck = Array.isArray(candidates) ? candidates : [];
+          const ownKeys = Object.keys(source);
+          const normalizedMap = new Map();
+
+          ownKeys.forEach((key) => {
+            if (typeof key === "string") {
+              const normalized = key.toLowerCase();
+              if (!normalizedMap.has(normalized)) {
+                normalizedMap.set(normalized, key);
+              }
+            }
+          });
+
+          for (const key of keysToCheck) {
             if (key in source && source[key] != null && source[key] !== "") {
               return source[key];
+            }
+
+            if (typeof key === "string") {
+              const normalized = key.toLowerCase();
+              if (normalizedMap.has(normalized)) {
+                const actualKey = normalizedMap.get(normalized);
+                const value = source[actualKey];
+                if (value != null && value !== "") {
+                  return value;
+                }
+              }
             }
           }
 
@@ -1124,8 +1148,9 @@
             }
           });
 
-          if (!updated) {
-            target[keys[0]] = value;
+          const primaryKey = keys[0];
+          if (!updated || !(primaryKey in target)) {
+            target[primaryKey] = value;
           }
         };
 
@@ -1374,7 +1399,9 @@
           for (const candidate of candidates) {
             const array = toArray(candidate);
             if (array.length > 0) {
-              return array.map((item) => cloneProduct(item));
+              return array.map((item) =>
+                typeof item === "object" && item !== null ? cloneProduct(item) : item
+              );
             }
           }
 
@@ -1386,10 +1413,15 @@
             return;
           }
 
-          const upperCaseEntries = entries.map((entry) => cloneProduct(entry));
-          const lowerCaseEntries = upperCaseEntries.map((entry) => cloneProduct(entry));
-          target.VintageProducts = upperCaseEntries;
-          target.vintageProducts = lowerCaseEntries;
+          const normalized = (Array.isArray(entries) ? entries : []).map((entry) =>
+            typeof entry === "object" && entry !== null ? cloneProduct(entry) : entry
+          );
+          target.VintageProducts = normalized.map((entry) =>
+            typeof entry === "object" && entry !== null ? cloneProduct(entry) : entry
+          );
+          target.vintageProducts = normalized.map((entry) =>
+            typeof entry === "object" && entry !== null ? cloneProduct(entry) : entry
+          );
         };
 
         const mergeMonittaIntoVintageProducts = (target, monittaEntries, previousIds = new Set()) => {
@@ -1457,6 +1489,238 @@
           monittaIdentifierKeys.forEach((key) => {
             target[key] = baseIdentifiers.map((identifier) => identifier);
           });
+        };
+
+        const toImageStringForPayload = (image) => {
+          if (image == null) {
+            return "";
+          }
+
+          if (
+            typeof image === "string" ||
+            typeof image === "number" ||
+            typeof image === "bigint"
+          ) {
+            const text = toDisplayString(image).trim();
+            if (!text) {
+              return "";
+            }
+            const normalized = normalizeBlobFile(text);
+            return normalized || text;
+          }
+
+          if (typeof File !== "undefined" && image instanceof File) {
+            const fileName = image.name && image.name.trim() ? image.name.trim() : "";
+            if (!fileName) {
+              return "";
+            }
+            const normalized = normalizeBlobFile(fileName);
+            return normalized || fileName;
+          }
+
+          if (typeof image === "object") {
+            const fileCandidate = resolveImageFileCandidate(image);
+            if (fileCandidate) {
+              return fileCandidate;
+            }
+
+            const urlCandidate = resolveImageUrlCandidate(image);
+            if (urlCandidate) {
+              const normalizedUrl = normalizeBlobFile(urlCandidate);
+              return normalizedUrl || urlCandidate;
+            }
+
+            const directCandidate = resolveField(
+              image,
+              [
+                "Image",
+                "image",
+                "imageUrl",
+                "ImageUrl",
+                "url",
+                "href",
+                "link",
+                "src",
+                "path",
+                "file",
+                "fileName",
+                "filename",
+                "name",
+                "value",
+                "blobName",
+                "blob",
+                "key",
+              ],
+              ""
+            );
+
+            if (directCandidate != null && directCandidate !== "") {
+              const text = toDisplayString(directCandidate).trim();
+              if (text) {
+                const normalized = normalizeBlobFile(text);
+                return normalized || text;
+              }
+            }
+          }
+
+          return "";
+        };
+
+        const gatherImagesForPayload = (...sources) => {
+          const results = [];
+          const seenValues = new Set();
+          const queue = [];
+          const seenObjects = new Set();
+
+          sources.forEach((source) => {
+            if (source != null) {
+              queue.push(source);
+            }
+          });
+
+          while (queue.length > 0) {
+            const current = queue.shift();
+
+            if (current == null) {
+              continue;
+            }
+
+            if (Array.isArray(current)) {
+              current.forEach((item) => queue.push(item));
+              continue;
+            }
+
+            const imageString = toImageStringForPayload(current);
+            if (imageString) {
+              if (!seenValues.has(imageString)) {
+                seenValues.add(imageString);
+                results.push(imageString);
+              }
+              continue;
+            }
+
+            if (typeof current === "object") {
+              if (typeof File !== "undefined" && current instanceof File) {
+                continue;
+              }
+
+              if (seenObjects.has(current)) {
+                continue;
+              }
+              seenObjects.add(current);
+
+              Object.values(current).forEach((value) => {
+                if (value != null) {
+                  queue.push(value);
+                }
+              });
+            }
+          }
+
+          return results;
+        };
+
+        const sanitizeVintageProductEntry = (entry, fallbackIndex = 0) => {
+          if (entry == null) {
+            return null;
+          }
+
+          if (
+            typeof entry === "string" ||
+            typeof entry === "number" ||
+            typeof entry === "bigint"
+          ) {
+            const text = toDisplayString(entry).trim();
+            if (!text) {
+              return null;
+            }
+            return {
+              VintageProductId: text,
+              VintageProductName: text,
+              VintageProductUrl: "",
+            };
+          }
+
+          if (typeof entry !== "object") {
+            return null;
+          }
+
+          const identifier = getVintageProductIdentifier(entry);
+          const idText = identifier ? toDisplayString(identifier).trim() : "";
+          if (!idText) {
+            return null;
+          }
+
+          const nameCandidate = resolveField(
+            entry,
+            [
+              "VintageProductName",
+              "vintageProductName",
+              "name",
+              "Name",
+              "title",
+              "productName",
+              "label",
+            ],
+            ""
+          );
+          const nameText =
+            nameCandidate != null && toDisplayString(nameCandidate).trim()
+              ? toDisplayString(nameCandidate).trim()
+              : "";
+          const finalName = nameText || `Vintage product ${fallbackIndex + 1}`;
+
+          const urlCandidate = resolveField(
+            entry,
+            [
+              "VintageProductUrl",
+              "vintageProductUrl",
+              "url",
+              "link",
+              "productUrl",
+              "href",
+            ],
+            ""
+          );
+          const urlText =
+            urlCandidate != null && toDisplayString(urlCandidate).trim()
+              ? toDisplayString(urlCandidate).trim()
+              : "";
+
+          return {
+            VintageProductId: idText,
+            VintageProductName: finalName,
+            VintageProductUrl: urlText,
+          };
+        };
+
+        const sanitizeVintageProductsForPayload = (entries) => {
+          const sanitized = [];
+          const seen = new Set();
+          const items = Array.isArray(entries) ? entries : [];
+
+          items.forEach((entry, index) => {
+            const cleaned = sanitizeVintageProductEntry(entry, index);
+            if (!cleaned) {
+              return;
+            }
+
+            const identifierText = cleaned.VintageProductId
+              ? toDisplayString(cleaned.VintageProductId).trim()
+              : "";
+
+            if (identifierText) {
+              const normalizedId = identifierText.toLowerCase();
+              if (seen.has(normalizedId)) {
+                return;
+              }
+              seen.add(normalizedId);
+            }
+
+            sanitized.push(cleaned);
+          });
+
+          return sanitized;
         };
 
         const getMonittaEntryByIdentifier = (identifier) => {
@@ -1769,11 +2033,13 @@
             return [];
           }
 
-          const candidates = [product.images, product.image, product.photos];
+          const candidates = [product.Images, product.images, product.image, product.photos];
           for (const candidate of candidates) {
             const array = toArray(candidate);
             if (array.length > 0) {
-              return array.map((item) => cloneProduct(item));
+              return array.map((item) =>
+                typeof item === "object" && item !== null ? cloneProduct(item) : item
+              );
             }
           }
 
@@ -1786,11 +2052,13 @@
           }
 
           const normalized = (Array.isArray(images) ? images : []).map((item) =>
-            cloneProduct(item)
+            typeof item === "object" && item !== null ? cloneProduct(item) : item
           );
 
-          ["images", "image", "photos"].forEach((key) => {
-            target[key] = normalized.map((item) => cloneProduct(item));
+          ["Images", "images", "image", "photos"].forEach((key) => {
+            target[key] = normalized.map((item) =>
+              typeof item === "object" && item !== null ? cloneProduct(item) : item
+            );
           });
         };
 
@@ -2706,28 +2974,40 @@
             return null;
           }
 
-          const payload = cloneProduct(currentProduct);
-          assignImagesToTarget(payload, editableImages);
-          assignVintageProductsToTarget(payload, editableVintageProducts);
+          const draft = cloneProduct(currentProduct);
+          assignImagesToTarget(draft, editableImages);
+          assignVintageProductsToTarget(draft, editableVintageProducts);
           const sanitizedName = nameInput ? nameInput.value.trim() : "";
           const sanitizedDescription = descriptionInput ? descriptionInput.value.trim() : "";
 
-          updateKnownFields(payload, ["name", "title", "productName", "label"], sanitizedName);
+          updateKnownFields(draft, ["Name", "name", "title", "productName", "label"], sanitizedName);
           updateKnownFields(
-            payload,
-            ["description", "summary", "details", "productDescription"],
+            draft,
+            ["Description", "description", "summary", "details", "productDescription"],
             sanitizedDescription
           );
-          ensureIdentifier(payload);
+          ensureIdentifier(draft);
+
+          updateKnownFields(
+            currentProduct,
+            ["Name", "name", "title", "productName", "label"],
+            sanitizedName
+          );
+          updateKnownFields(
+            currentProduct,
+            ["Description", "description", "summary", "details", "productDescription"],
+            sanitizedDescription
+          );
+          ensureIdentifier(currentProduct);
 
           const previousIdentifierValues = [];
           [
-            payload?.monittaStoreProducts,
-            payload?.monittaStoreProductIds,
-            payload?.monittaProducts,
-            payload?.monittaProductIds,
-            payload?.monittaStoreItems,
-            payload?.monittaIds,
+            draft?.monittaStoreProducts,
+            draft?.monittaStoreProductIds,
+            draft?.monittaProducts,
+            draft?.monittaProductIds,
+            draft?.monittaStoreItems,
+            draft?.monittaIds,
           ].forEach((source) => {
             previousIdentifierValues.push(...toArray(source));
           });
@@ -2737,15 +3017,56 @@
           const sanitizedMonittaProducts = sanitizeMonittaEntries(monittaProductsSource);
           const monittaIdentifiers = gatherMonittaIdentifiers(sanitizedMonittaProducts);
 
-          assignMonittaProductsToTarget(payload, sanitizedMonittaProducts);
-          assignMonittaIdentifiersToTarget(payload, monittaIdentifiers);
-          mergeMonittaIntoVintageProducts(payload, sanitizedMonittaProducts, previousIdentifiers);
+          assignMonittaProductsToTarget(draft, sanitizedMonittaProducts);
+          assignMonittaIdentifiersToTarget(draft, monittaIdentifiers);
+          mergeMonittaIntoVintageProducts(draft, sanitizedMonittaProducts, previousIdentifiers);
 
           assignMonittaProductsToTarget(currentProduct, sanitizedMonittaProducts);
           assignMonittaIdentifiersToTarget(currentProduct, monittaIdentifiers);
           mergeMonittaIntoVintageProducts(currentProduct, sanitizedMonittaProducts, previousIdentifiers);
 
-          return payload;
+          const idCandidate = resolveField(
+            draft,
+            ["id", "Id", "ID", "productId", "productID"],
+            productId ?? ""
+          );
+          const normalizedId = toDisplayString(idCandidate).trim();
+
+          const resolvedName = toDisplayString(
+            resolveField(
+              draft,
+              ["Name", "name", "title", "productName", "label"],
+              sanitizedName
+            )
+          ).trim();
+
+          const resolvedDescription = toDisplayString(
+            resolveField(
+              draft,
+              ["Description", "description", "summary", "details", "productDescription"],
+              sanitizedDescription
+            )
+          ).trim();
+
+          const imagesForPayload = gatherImagesForPayload(
+            draft?.Images,
+            draft?.images,
+            draft?.image,
+            draft?.photos,
+            editableImages
+          );
+
+          const vintageEntriesForPayload = sanitizeVintageProductsForPayload(
+            getExistingVintageProducts(draft)
+          );
+
+          return {
+            id: normalizedId || (productId ? String(productId).trim() : ""),
+            Name: resolvedName,
+            Description: resolvedDescription,
+            Images: imagesForPayload,
+            VintageProducts: vintageEntriesForPayload,
+          };
         };
 
         const uploadProductImages = async (id, files) => {
